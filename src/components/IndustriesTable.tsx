@@ -1,10 +1,41 @@
 "use client";
 
 import { IndustryRow } from "@/lib/types";
+import { clsx } from "clsx";
 
 interface Props {
   industries: IndustryRow[];
   hasCadger: boolean;
+}
+
+function Square({
+  label,
+  value,
+  sub,
+  accent
+}: {
+  label: string;
+  value: string;
+  sub: string;
+  accent: "accent" | "warn" | "good" | "bad" | "ink";
+}) {
+  const accentClasses: Record<string, string> = {
+    accent: "text-accent-dark",
+    warn: "text-warn",
+    good: "text-good",
+    bad: "text-bad",
+    ink: "text-ink-700"
+  };
+
+  return (
+    <div className="flex aspect-square flex-col items-center justify-center rounded-lg border border-line bg-white p-2 text-center">
+      <span className="text-[10px] font-semibold uppercase tracking-wide text-ink-600">{label}</span>
+      <span className={clsx("mt-1 font-display text-xl font-bold tabular-nums", accentClasses[accent])}>
+        {value}
+      </span>
+      <span className="mt-1 text-[10px] leading-tight text-ink-500">{sub}</span>
+    </div>
+  );
 }
 
 export function IndustriesTable({ industries, hasCadger }: Props) {
@@ -21,63 +52,52 @@ export function IndustriesTable({ industries, hasCadger }: Props) {
   }
 
   return (
-    <div className="rounded-lg border border-line bg-white shadow-card">
-      <div className="border-b border-line p-3">
-        <h3 className="font-display text-xs font-semibold text-ink-950">Visão por indústria</h3>
-        <p className="mt-0.5 text-[11px] text-ink-600">
-          Cadastrados (CADGER) x itens ativos na Martins x cadastrados/com preço no concorrente
-        </p>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[860px] border-collapse">
-          <thead className="bg-surface">
-            <tr>
-              <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-600">
-                Fornecedor
-              </th>
-              <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wide text-ink-600">
-                Cadastrados
-              </th>
-              <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wide text-ink-600">
-                Itens Martins
-              </th>
-              <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wide text-ink-600">
-                Concorrente cadastrado
-              </th>
-              <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wide text-ink-600">
-                Concorrente c/ preço
-              </th>
-              <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wide text-ink-600">
-                Diferença
-              </th>
-              <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wide text-ink-600">
-                Ruptura
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {industries.map((i) => (
-              <tr key={i.fornecedor} className="border-b border-line/60 hover:bg-surface/60">
-                <td className="px-3 py-2 text-xs font-medium text-ink-950">{i.fornecedor}</td>
-                <td className="px-3 py-2 text-right text-xs tabular-nums text-ink-700">{i.cadastrados}</td>
-                <td className="px-3 py-2 text-right text-xs font-medium tabular-nums text-ink-950">{i.itensMartins}</td>
-                <td className="px-3 py-2 text-right text-xs tabular-nums text-ink-700">
-                  {i.itensConcorrenteCadastrados}
-                </td>
-                <td className="px-3 py-2 text-right text-xs tabular-nums text-ink-700">
-                  {i.itensConcorrenteComPreco}
-                </td>
-                <td className="px-3 py-2 text-right text-xs tabular-nums">
-                  <span className={i.diferenca > 0 ? "font-semibold text-bad" : i.diferenca < 0 ? "font-semibold text-good" : "text-ink-500"}>
-                    {i.diferenca > 0 ? "+" : ""}
-                    {i.diferenca}
-                  </span>
-                </td>
-                <td className="px-3 py-2 text-right text-xs tabular-nums text-ink-500">{i.ruptura}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="rounded-lg border border-line bg-white p-3 shadow-card">
+      <h3 className="font-display text-xs font-semibold text-ink-950">Visão por indústria</h3>
+      <p className="mt-0.5 text-[11px] text-ink-600">
+        Quanto a Martins tem ativo contra quanto o concorrente tem cadastrado, por indústria importada
+      </p>
+
+      <div className="mt-3 flex flex-col gap-3">
+        {industries.map((i) => {
+          const indisponivel = i.itensConcorrenteCadastrados - i.itensConcorrenteComPreco;
+          const diferencaLabel = i.diferenca > 0 ? `+${i.diferenca}` : `${i.diferenca}`;
+          const diferencaSub =
+            i.diferenca > 0
+              ? "concorrente tem mais itens"
+              : i.diferenca < 0
+              ? "Martins tem mais itens"
+              : "empatado";
+          const diferencaAccent = i.diferenca > 0 ? "bad" : i.diferenca < 0 ? "good" : "ink";
+
+          return (
+            <div key={i.fornecedor} className="rounded-lg border border-line bg-surface/50 p-2.5">
+              <div className="mb-2 truncate text-xs font-semibold text-ink-950" title={i.fornecedor}>
+                {i.fornecedor}
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <Square
+                  label="Martins"
+                  value={String(i.itensMartins)}
+                  sub={`${i.cadastrados} cadastrado · ${i.ruptura} ruptura`}
+                  accent="accent"
+                />
+                <Square
+                  label="Concorrente"
+                  value={String(i.itensConcorrenteCadastrados)}
+                  sub={`${indisponivel} indisponível`}
+                  accent="warn"
+                />
+                <Square
+                  label="Diferença"
+                  value={diferencaLabel}
+                  sub={diferencaSub}
+                  accent={diferencaAccent as "good" | "bad" | "ink"}
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
