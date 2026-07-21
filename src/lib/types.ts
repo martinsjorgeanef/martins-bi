@@ -30,8 +30,8 @@ export interface DashboardStats {
 export interface IndustryRow {
   fornecedor: string;
   cadastrados: number;
-  comPrecoAtivo: number;
+  itensMartins: number;
+  itensConcorrente: number;
+  diferenca: number;
   ruptura: number;
-  rupturaPct: number;
-  concorrenteCadastrado: number;
 }
