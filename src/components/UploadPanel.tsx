@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import * as XLSX from "xlsx";
 import { X, UploadCloud, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { clsx } from "clsx";
 
@@ -12,14 +13,134 @@ interface Props {
 
 type UploadType = "MARTINS" | "COMPETITOR" | "CADGER";
 
+interface CadgerRow {
+  ean: string;
+  fornecedor: string;
+  description: string | null;
+}
+
+function normalizeEan(value: unknown): string | null {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) return null;
+    return Math.round(value).toString();
+  }
+  const cleaned = String(value).trim().replace(/\D/g, "");
+  return cleaned.length > 0 ? cleaned : null;
+}
+
+function parseCadgerClientSide(buffer: ArrayBuffer): { rows: CadgerRow[]; totalRows: number; skipped: number } {
+  const workbook = XLSX.read(buffer, { type: "array" });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: null, range: 3 });
+
+  const rows: CadgerRow[] = [];
+  let skipped = 0;
+
+  for (const line of raw) {
+    const ean = normalizeEan(line["EAN-13"]);
+    const fornecedorRaw = line["Fornecedor"];
+    const fornecedor = typeof fornecedorRaw === "string" ? fornecedorRaw.trim() : "";
+    const descRaw = line["Descrição Alongada"];
+
+    if (!ean || !fornecedor) {
+      skipped++;
+      continue;
+    }
+
+    rows.push({
+      ean,
+      fornecedor,
+      description: typeof descRaw === "string" && descRaw.trim() ? descRaw.trim() : null
+    });
+  }
+
+  return { rows, totalRows: raw.length, skipped };
+}
+
 export function UploadPanel({ open, onClose, onSuccess }: Props) {
   const [type, setType] = useState<UploadType>("MARTINS");
   const [sourceName, setSourceName] = useState("");
+  const [fornecedor, setFornecedor] = useState("");
+  const [fornecedorOptions, setFornecedorOptions] = useState<string[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [progress, setProgress] = useState<string | null>(null);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
 
+  useEffect(() => {
+    if (open && type === "COMPETITOR" && fornecedorOptions.length === 0) {
+      fetch("/api/fornecedores")
+        .then((r) => r.json())
+        .then((d) => setFornecedorOptions(d.fornecedores || []))
+        .catch(() => {});
+    }
+  }, [open, type, fornecedorOptions.length]);
+
   if (!open) return null;
+
+  async function handleSubmitCadger() {
+    setProgress("Lendo a planilha...");
+    const buffer = await file!.arrayBuffer();
+    const { rows, totalRows, skipped } = parseCadgerClientSide(buffer);
+
+    const BATCH = 1500;
+    const totalBatches = Math.max(1, Math.ceil(rows.length / BATCH));
+
+    for (let i = 0; i < totalBatches; i++) {
+      const batchRows = rows.slice(i * BATCH, (i + 1) * BATCH);
+      setProgress(`Enviando lote ${i + 1} de ${totalBatches}...`);
+
+      const res = await fetch("/api/upload/cadger-batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rows: batchRows,
+          isFirstBatch: i === 0,
+          isLastBatch: i === totalBatches - 1,
+          fileName: file!.name,
+          totalRows,
+          totalSkipped: skipped
+        })
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Erro ao enviar um dos lotes do CADGER.");
+      }
+    }
+
+    setResult({
+      ok: true,
+      message: `Processado: ${totalRows} linhas · ${rows.length} cadastrados · ${skipped} ignorados.`
+    });
+    setFile(null);
+    onSuccess();
+  }
+
+  async function handleSubmitDefault() {
+    const formData = new FormData();
+    formData.append("file", file!);
+    formData.append("type", type);
+    if (type === "COMPETITOR") {
+      formData.append("sourceName", sourceName.trim());
+      formData.append("fornecedor", fornecedor.trim());
+    }
+
+    const res = await fetch("/api/upload", { method: "POST", body: formData });
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Erro ao processar o arquivo.");
+    }
+
+    setResult({
+      ok: true,
+      message: `Processado: ${data.processed} linhas · ${data.created} novos · ${data.updated} atualizados · ${data.skipped} ignorados.`
+    });
+    setFile(null);
+    onSuccess();
+  }
 
   async function handleSubmit() {
     if (!file) {
@@ -30,33 +151,26 @@ export function UploadPanel({ open, onClose, onSuccess }: Props) {
       setResult({ ok: false, message: "Informe o nome do distribuidor concorrente (ex: DPC)." });
       return;
     }
+    if (type === "COMPETITOR" && !fornecedor.trim()) {
+      setResult({ ok: false, message: "Informe a indústria/fornecedor desse lote (ex: COLGATE-PALMOLIVE)." });
+      return;
+    }
 
     setSubmitting(true);
     setResult(null);
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("type", type);
-    if (type === "COMPETITOR") formData.append("sourceName", sourceName.trim());
+    setProgress(null);
 
     try {
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
-      const data = await res.json();
-
-      if (!res.ok) {
-        setResult({ ok: false, message: data.error || "Erro ao processar o arquivo." });
+      if (type === "CADGER") {
+        await handleSubmitCadger();
       } else {
-        setResult({
-          ok: true,
-          message: `Processado: ${data.processed} linhas · ${data.created} novos · ${data.updated} atualizados · ${data.skipped} ignorados.`
-        });
-        setFile(null);
-        onSuccess();
+        await handleSubmitDefault();
       }
-    } catch {
-      setResult({ ok: false, message: "Falha de conexão ao enviar o arquivo." });
+    } catch (err) {
+      setResult({ ok: false, message: err instanceof Error ? err.message : "Falha ao enviar o arquivo." });
     } finally {
       setSubmitting(false);
+      setProgress(null);
     }
   }
 
@@ -101,14 +215,34 @@ export function UploadPanel({ open, onClose, onSuccess }: Props) {
         </div>
 
         {type === "COMPETITOR" && (
-          <div className="mt-3">
-            <label className="text-xs font-medium text-ink-600">Nome do distribuidor</label>
-            <input
-              value={sourceName}
-              onChange={(e) => setSourceName(e.target.value)}
-              placeholder="Ex: DPC"
-              className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-accent"
-            />
+          <div className="mt-3 space-y-3">
+            <div>
+              <label className="text-xs font-medium text-ink-600">Nome do distribuidor</label>
+              <input
+                value={sourceName}
+                onChange={(e) => setSourceName(e.target.value)}
+                placeholder="Ex: DPC"
+                className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-accent"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-ink-600">Indústria / Fornecedor desse lote</label>
+              <input
+                list="fornecedor-options"
+                value={fornecedor}
+                onChange={(e) => setFornecedor(e.target.value)}
+                placeholder="Ex: COLGATE-PALMOLIVE COM.HIG ORAL"
+                className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-accent"
+              />
+              <datalist id="fornecedor-options">
+                {fornecedorOptions.map((f) => (
+                  <option key={f} value={f} />
+                ))}
+              </datalist>
+              <p className="mt-1 text-[11px] text-ink-500">
+                Use o mesmo nome do fornecedor que aparece no CADGER, para o cruzamento funcionar certinho.
+              </p>
+            </div>
           </div>
         )}
 
@@ -130,6 +264,13 @@ export function UploadPanel({ open, onClose, onSuccess }: Props) {
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           />
         </label>
+
+        {progress && (
+          <div className="mt-3 flex items-center gap-2 rounded-lg bg-accent/10 p-3 text-sm text-accent-dark">
+            <Loader2 size={16} className="animate-spin" />
+            <span>{progress}</span>
+          </div>
+        )}
 
         {result && (
           <div
