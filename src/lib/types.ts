@@ -31,7 +31,8 @@ export interface IndustryRow {
   fornecedor: string;
   cadastrados: number;
   itensMartins: number;
-  itensConcorrente: number;
+  itensConcorrenteCadastrados: number;
+  itensConcorrenteComPreco: number;
   diferenca: number;
   ruptura: number;
 }
