@@ -71,6 +71,7 @@ export async function GET(req: NextRequest) {
   const category = searchParams.get("category") || "";
   const status = searchParams.get("status") || "";
   const competitor = searchParams.get("competitor") || "";
+  const supplier = searchParams.get("supplier") || "";
   const sortBy = searchParams.get("sortBy") || "diffPct";
   const sortDir = searchParams.get("sortDir") === "asc" ? 1 : -1;
   const page = Math.max(1, Number(searchParams.get("page") || 1));
@@ -98,6 +99,9 @@ export async function GET(req: NextRequest) {
   }
   if (competitor) {
     rows = rows.filter((r) => r.competitors.some((c) => c.name === competitor));
+  }
+  if (supplier) {
+    rows = rows.filter((r) => r.supplier === supplier);
   }
 
   rows.sort((a, b) => {
