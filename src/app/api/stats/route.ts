@@ -4,6 +4,7 @@ import { calcDiffPct, calcStatus } from "@/lib/calculations";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
 export async function GET() {
   const settings = await prisma.settings.findUnique({ where: { id: "singleton" } });
   const thresholdFraction = (settings?.thresholdPct ?? 5) / 100;
@@ -12,6 +13,7 @@ export async function GET() {
 
   const categoriesSet = new Set<string>();
   const competitorsSet = new Set<string>();
+  const suppliersSet = new Set<string>();
 
   let matched = 0;
   let competitive = 0;
@@ -23,6 +25,7 @@ export async function GET() {
 
   for (const p of products) {
     if (p.category) categoriesSet.add(p.category);
+    if (p.supplier) suppliersSet.add(p.supplier);
     for (const c of p.competitorPrices) competitorsSet.add(c.competitorName);
 
     if (p.competitorPrices.length === 0) continue;
@@ -51,6 +54,7 @@ export async function GET() {
     avgDiffPct: matched > 0 ? diffSum / matched : null,
     categories: Array.from(categoriesSet).sort(),
     competitorNames: Array.from(competitorsSet).sort(),
+    supplierNames: Array.from(suppliersSet).sort(),
     thresholdPct: settings?.thresholdPct ?? 5,
     statusDistribution: [
       { name: "Competitivo", value: competitive, key: "COMPETITIVO" },
