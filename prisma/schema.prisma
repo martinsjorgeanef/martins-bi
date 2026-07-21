@@ -1,1 +1,53 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
 
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Product {
+  id               String            @id @default(cuid())
+  ean              String            @unique
+  description      String
+  category         String?
+  supplier         String?
+  martinsPrice     Float
+  martinsUpdatedAt DateTime          @default(now())
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  competitorPrices CompetitorPrice[]
+
+  @@index([category])
+}
+
+model CompetitorPrice {
+  id             String   @id @default(cuid())
+  productId      String
+  product        Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  competitorName String
+  price          Float
+  updatedAt      DateTime @updatedAt
+  createdAt      DateTime @default(now())
+
+  @@unique([productId, competitorName])
+  @@index([competitorName])
+}
+
+model UploadLog {
+  id            String   @id @default(cuid())
+  type          String
+  sourceName    String?
+  fileName      String
+  rowsProcessed Int
+  rowsCreated   Int
+  rowsUpdated   Int
+  rowsSkipped   Int
+  createdAt     DateTime @default(now())
+}
+
+model Settings {
+  id             String @id @default("singleton")
+  thresholdPct   Float  @default(5)
+}
