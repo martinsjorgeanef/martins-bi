@@ -51,3 +51,13 @@ model Settings {
   id             String @id @default("singleton")
   thresholdPct   Float  @default(5)
 }
+model CadgerItem {
+  id          String   @id @default(cuid())
+  ean         String   @unique
+  fornecedor  String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([fornecedor])
+}
