@@ -61,3 +61,15 @@ model CadgerItem {
 
   @@index([fornecedor])
 }
+model CompetitorCatalogItem {
+  id             String   @id @default(cuid())
+  ean            String
+  fornecedor     String
+  competitorName String
+  price          Float
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([ean, competitorName])
+  @@index([fornecedor])
+}
