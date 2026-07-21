@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { X, UploadCloud, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { clsx } from "clsx";
+import { IndustryRow } from "@/lib/types";
 
 interface Props {
   open: boolean;
@@ -145,10 +146,24 @@ export function UploadPanel({ open, onClose, onSuccess }: Props) {
       throw new Error(data.error || "Erro ao processar o arquivo.");
     }
 
-    setResult({
-      ok: true,
-      message: `Processado: ${data.processed} linhas · ${data.created} novos · ${data.updated} atualizados · ${data.skipped} ignorados.`
-    });
+    let message = `Processado: ${data.processed} linhas · ${data.created} novos · ${data.updated} atualizados · ${data.skipped} ignorados.`;
+
+    if (type === "COMPETITOR" && data.fornecedor) {
+      try {
+        const industriesRes = await fetch("/api/industries");
+        const industriesData = await industriesRes.json();
+        const match: IndustryRow | undefined = (industriesData.industries || []).find(
+          (i: IndustryRow) => i.fornecedor.trim().toLowerCase() === data.fornecedor.trim().toLowerCase()
+        );
+        if (match) {
+          message = `${match.fornecedor}: Itens Martins ${match.itensMartins} · Concorrente cadastrado ${match.itensConcorrenteCadastrados} · Concorrente c/ preço ${match.itensConcorrenteComPreco}.`;
+        }
+      } catch {
+        // mantém a mensagem padrão se a busca falhar
+      }
+    }
+
+    setResult({ ok: true, message });
     setFile(null);
     onSuccess();
   }
