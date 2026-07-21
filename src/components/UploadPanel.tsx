@@ -58,6 +58,26 @@ function parseCadgerClientSide(buffer: ArrayBuffer): { rows: CadgerRow[]; totalR
   return { rows, totalRows: raw.length, skipped };
 }
 
+async function sendBatchWithRetry(payload: unknown, attempts = 3): Promise<void> {
+  let lastError = "Erro desconhecido ao enviar o lote.";
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      const res = await fetch("/api/upload/cadger-batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return;
+      const data = await res.json().catch(() => ({}));
+      lastError = data.error || `Falha no lote (tentativa ${attempt}).`;
+    } catch {
+      lastError = `Falha de conexão no lote (tentativa ${attempt}).`;
+    }
+    await new Promise((r) => setTimeout(r, 800));
+  }
+  throw new Error(lastError);
+}
+
 export function UploadPanel({ open, onClose, onSuccess }: Props) {
   const [type, setType] = useState<UploadType>("MARTINS");
   const [sourceName, setSourceName] = useState("");
@@ -84,30 +104,21 @@ export function UploadPanel({ open, onClose, onSuccess }: Props) {
     const buffer = await file!.arrayBuffer();
     const { rows, totalRows, skipped } = parseCadgerClientSide(buffer);
 
-    const BATCH = 1500;
+    const BATCH = 400;
     const totalBatches = Math.max(1, Math.ceil(rows.length / BATCH));
 
     for (let i = 0; i < totalBatches; i++) {
       const batchRows = rows.slice(i * BATCH, (i + 1) * BATCH);
       setProgress(`Enviando lote ${i + 1} de ${totalBatches}...`);
 
-      const res = await fetch("/api/upload/cadger-batch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          rows: batchRows,
-          isFirstBatch: i === 0,
-          isLastBatch: i === totalBatches - 1,
-          fileName: file!.name,
-          totalRows,
-          totalSkipped: skipped
-        })
+      await sendBatchWithRetry({
+        rows: batchRows,
+        isFirstBatch: i === 0,
+        isLastBatch: i === totalBatches - 1,
+        fileName: file!.name,
+        totalRows,
+        totalSkipped: skipped
       });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Erro ao enviar um dos lotes do CADGER.");
-      }
     }
 
     setResult({
@@ -248,7 +259,8 @@ export function UploadPanel({ open, onClose, onSuccess }: Props) {
 
         {type === "CADGER" && (
           <p className="mt-3 rounded-lg bg-warn-bg px-3 py-2 text-xs text-warn">
-            Esse envio substitui todo o cadastro anterior do CADGER (é um cadastro mensal, não acumula).
+            Esse envio substitui todo o cadastro anterior do CADGER (é um cadastro mensal, não acumula). Pode levar
+            alguns minutos para arquivos grandes.
           </p>
         )}
 
