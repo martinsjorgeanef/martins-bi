@@ -24,4 +24,14 @@ export interface DashboardStats {
   avgDiffPct: number | null;
   categories: string[];
   competitorNames: string[];
+  supplierNames: string[];
+}
+
+export interface IndustryRow {
+  fornecedor: string;
+  cadastrados: number;
+  comPrecoAtivo: number;
+  ruptura: number;
+  rupturaPct: number;
+  concorrenteCadastrado: number;
 }
