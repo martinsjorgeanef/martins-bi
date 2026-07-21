@@ -5,8 +5,9 @@ import { KpiCards } from "./KpiCards";
 import { StatusDistributionChart, TopDisadvantageChart } from "./Charts";
 import { Filters } from "./Filters";
 import { ProductsTable } from "./ProductsTable";
+import { IndustriesTable } from "./IndustriesTable";
 import { UploadPanel } from "./UploadPanel";
-import { DashboardStats, ProductRow } from "@/lib/types";
+import { DashboardStats, ProductRow, IndustryRow } from "@/lib/types";
 import { UploadCloud, BarChart3 } from "lucide-react";
 
 interface StatsResponse extends DashboardStats {
@@ -24,11 +25,15 @@ export function Dashboard() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
+  const [industries, setIndustries] = useState<IndustryRow[]>([]);
+  const [hasCadger, setHasCadger] = useState(false);
+
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("");
   const [competitor, setCompetitor] = useState("");
+  const [supplier, setSupplier] = useState("");
   const [page, setPage] = useState(1);
   const [sortBy, setSortBy] = useState("diffPct");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -43,7 +48,7 @@ export function Dashboard() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, category, status, competitor]);
+  }, [debouncedSearch, category, status, competitor, supplier]);
 
   const loadStats = useCallback(async () => {
     setStatsLoading(true);
@@ -61,6 +66,7 @@ export function Dashboard() {
       category,
       status,
       competitor,
+      supplier,
       page: String(page),
       pageSize: "50",
       sortBy,
@@ -72,7 +78,14 @@ export function Dashboard() {
     setTotal(data.total);
     setTotalPages(data.totalPages);
     setRowsLoading(false);
-  }, [debouncedSearch, category, status, competitor, page, sortBy, sortDir]);
+  }, [debouncedSearch, category, status, competitor, supplier, page, sortBy, sortDir]);
+
+  const loadIndustries = useCallback(async () => {
+    const res = await fetch("/api/industries");
+    const data = await res.json();
+    setIndustries(data.industries);
+    setHasCadger(data.hasCadger);
+  }, []);
 
   useEffect(() => {
     loadStats();
@@ -81,6 +94,10 @@ export function Dashboard() {
   useEffect(() => {
     loadRows();
   }, [loadRows]);
+
+  useEffect(() => {
+    loadIndustries();
+  }, [loadIndustries]);
 
   function handleSort(field: string) {
     if (field === sortBy) {
@@ -106,6 +123,7 @@ export function Dashboard() {
     setUploadOpen(false);
     loadStats();
     loadRows();
+    loadIndustries();
   }
 
   return (
@@ -162,6 +180,8 @@ export function Dashboard() {
           </div>
         </div>
 
+        <IndustriesTable industries={industries} hasCadger={hasCadger} />
+
         <Filters
           search={search}
           onSearch={setSearch}
@@ -171,8 +191,11 @@ export function Dashboard() {
           onStatus={setStatus}
           competitor={competitor}
           onCompetitor={setCompetitor}
+          supplier={supplier}
+          onSupplier={setSupplier}
           categories={stats?.categories ?? []}
           competitorNames={stats?.competitorNames ?? []}
+          supplierNames={stats?.supplierNames ?? []}
           threshold={threshold}
           onThreshold={handleThresholdChange}
         />
