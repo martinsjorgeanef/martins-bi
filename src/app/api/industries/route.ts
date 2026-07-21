@@ -5,50 +5,54 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const cadgerItems = await prisma.cadgerItem.findMany();
+  const catalogItems = await prisma.competitorCatalogItem.findMany();
 
-  if (cadgerItems.length === 0) {
+  if (catalogItems.length === 0) {
     return NextResponse.json({ industries: [], hasCadger: false });
   }
 
+  const fornecedoresImportados = Array.from(new Set(catalogItems.map((c) => c.fornecedor)));
+
+  const cadgerItems = await prisma.cadgerItem.findMany({
+    where: { fornecedor: { in: fornecedoresImportados } }
+  });
   const eans = cadgerItems.map((c) => c.ean);
   const products = await prisma.product.findMany({ where: { ean: { in: eans } } });
   const productByEan = new Map(products.map((p) => [p.ean, p]));
 
-  const catalogItems = await prisma.competitorCatalogItem.findMany();
   type ConcAgg = { cadastrados: number; comPreco: number };
-  const concByFornecedor = new Map();
+  const concByFornecedor = new Map<string, ConcAgg>();
   for (const c of catalogItems) {
-    const entry: ConcAgg = concByFornecedor.get(c.fornecedor) ?? { cadastrados: 0, comPreco: 0 };
+    const entry = concByFornecedor.get(c.fornecedor) ?? { cadastrados: 0, comPreco: 0 };
     entry.cadastrados++;
     if (c.price !== null) entry.comPreco++;
     concByFornecedor.set(c.fornecedor, entry);
   }
 
   type FornecedorAgg = { cadastrados: number; itensMartins: number };
-  const byFornecedor = new Map();
-
+  const byFornecedor = new Map<string, FornecedorAgg>();
   for (const item of cadgerItems) {
-    const entry: FornecedorAgg = byFornecedor.get(item.fornecedor) ?? { cadastrados: 0, itensMartins: 0 };
+    const entry = byFornecedor.get(item.fornecedor) ?? { cadastrados: 0, itensMartins: 0 };
     entry.cadastrados++;
     if (productByEan.has(item.ean)) entry.itensMartins++;
     byFornecedor.set(item.fornecedor, entry);
   }
 
-  const industries = Array.from(byFornecedor.entries())
-    .map(([fornecedor, data]: [string, FornecedorAgg]) => {
-      const conc: ConcAgg = concByFornecedor.get(fornecedor) ?? { cadastrados: 0, comPreco: 0 };
+  const industries = fornecedoresImportados
+    .map((fornecedor) => {
+      const cadger = byFornecedor.get(fornecedor) ?? { cadastrados: 0, itensMartins: 0 };
+      const conc = concByFornecedor.get(fornecedor)!;
       return {
         fornecedor,
-        cadastrados: data.cadastrados,
-        itensMartins: data.itensMartins,
+        cadastrados: cadger.cadastrados,
+        itensMartins: cadger.itensMartins,
         itensConcorrenteCadastrados: conc.cadastrados,
         itensConcorrenteComPreco: conc.comPreco,
-        diferenca: conc.cadastrados - data.itensMartins,
-        ruptura: data.cadastrados - data.itensMartins
+        diferenca: conc.cadastrados - cadger.itensMartins,
+        ruptura: cadger.cadastrados - cadger.itensMartins
       };
     })
-    .sort((a, b) => b.cadastrados - a.cadastrados);
+    .sort((a, b) => b.itensConcorrenteCadastrados - a.itensConcorrenteCadastrados);
 
   return NextResponse.json({ industries, hasCadger: true });
 }
