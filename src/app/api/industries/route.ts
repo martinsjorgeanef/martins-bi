@@ -20,13 +20,11 @@ export async function GET() {
 
   const productByEan = new Map(products.map((p) => [p.ean, p]));
 
-  const byFornecedor = new Map
-    string,
-    { cadastrados: number; comPrecoAtivo: number; concorrenteCadastrado: number }
-  >();
+  type FornecedorAgg = { cadastrados: number; comPrecoAtivo: number; concorrenteCadastrado: number };
+  const byFornecedor = new Map();
 
   for (const item of cadgerItems) {
-    const entry = byFornecedor.get(item.fornecedor) ?? {
+    const entry: FornecedorAgg = byFornecedor.get(item.fornecedor) ?? {
       cadastrados: 0,
       comPrecoAtivo: 0,
       concorrenteCadastrado: 0
@@ -45,7 +43,7 @@ export async function GET() {
   }
 
   const industries = Array.from(byFornecedor.entries())
-    .map(([fornecedor, data]) => ({
+    .map(([fornecedor, data]: [string, FornecedorAgg]) => ({
       fornecedor,
       cadastrados: data.cadastrados,
       comPrecoAtivo: data.comPrecoAtivo,
