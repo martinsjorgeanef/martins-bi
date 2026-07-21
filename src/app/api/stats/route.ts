@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { calcDiffPct, calcStatus } from "@/lib/calculations";
 
 export const runtime = "nodejs";
-
+export const dynamic = "force-dynamic";
 export async function GET() {
   const settings = await prisma.settings.findUnique({ where: { id: "singleton" } });
   const thresholdFraction = (settings?.thresholdPct ?? 5) / 100;
