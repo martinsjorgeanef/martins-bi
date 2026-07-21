@@ -68,7 +68,7 @@ export function Dashboard() {
       competitor,
       supplier,
       page: String(page),
-      pageSize: "50",
+      pageSize: "199",
       sortBy,
       sortDir
     });
