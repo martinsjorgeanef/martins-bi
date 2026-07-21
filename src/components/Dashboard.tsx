@@ -7,6 +7,7 @@ import { Filters } from "./Filters";
 import { ProductsTable } from "./ProductsTable";
 import { IndustriesTable } from "./IndustriesTable";
 import { UploadPanel } from "./UploadPanel";
+import { ExportButtons } from "./ExportButtons";
 import { DashboardStats, ProductRow, IndustryRow } from "@/lib/types";
 import { UploadCloud, BarChart3 } from "lucide-react";
 
@@ -68,7 +69,7 @@ export function Dashboard() {
       competitor,
       supplier,
       page: String(page),
-      pageSize: "199",
+      pageSize: "50",
       sortBy,
       sortDir
     });
@@ -86,6 +87,23 @@ export function Dashboard() {
     setIndustries(data.industries);
     setHasCadger(data.hasCadger);
   }, []);
+
+  const fetchAllFilteredRows = useCallback(async (): Promise<ProductRow[]> => {
+    const params = new URLSearchParams({
+      search: debouncedSearch,
+      category,
+      status,
+      competitor,
+      supplier,
+      page: "1",
+      pageSize: "5000",
+      sortBy,
+      sortDir
+    });
+    const res = await fetch(`/api/products?${params.toString()}`);
+    const data = await res.json();
+    return data.rows as ProductRow[];
+  }, [debouncedSearch, category, status, competitor, supplier, sortBy, sortDir]);
 
   useEffect(() => {
     loadStats();
@@ -199,6 +217,10 @@ export function Dashboard() {
           threshold={threshold}
           onThreshold={handleThresholdChange}
         />
+
+        <div className="flex justify-end">
+          <ExportButtons fetchAllRows={fetchAllFilteredRows} />
+        </div>
 
         <ProductsTable
           rows={rows}
