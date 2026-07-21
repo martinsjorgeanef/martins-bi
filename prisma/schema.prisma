@@ -66,7 +66,7 @@ model CompetitorCatalogItem {
   ean            String
   fornecedor     String
   competitorName String
-  price          Float
+  price          Float?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
