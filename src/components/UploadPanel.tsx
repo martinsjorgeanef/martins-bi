@@ -38,7 +38,7 @@ function parseCadgerClientSide(buffer: ArrayBuffer): { rows: CadgerRow[]; totalR
   let skipped = 0;
 
   for (const line of raw) {
-    const ean = normalizeEan(line["EAN-13"]);
+    const ean = normalizeEan(line["CB-UND.Consumo"]);
     const fornecedorRaw = line["Fornecedor"];
     const fornecedor = typeof fornecedorRaw === "string" ? fornecedorRaw.trim() : "";
     const descRaw = line["Descrição Alongada"];
