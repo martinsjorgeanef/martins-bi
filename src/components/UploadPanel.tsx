@@ -10,7 +10,7 @@ interface Props {
   onSuccess: () => void;
 }
 
-type UploadType = "MARTINS" | "COMPETITOR";
+type UploadType = "MARTINS" | "COMPETITOR" | "CADGER";
 
 export function UploadPanel({ open, onClose, onSuccess }: Props) {
   const [type, setType] = useState<UploadType>("MARTINS");
@@ -70,11 +70,11 @@ export function UploadPanel({ open, onClose, onSuccess }: Props) {
           </button>
         </div>
 
-        <div className="mt-4 flex gap-2 rounded-lg bg-surface p-1">
+        <div className="mt-4 flex gap-1 rounded-lg bg-surface p-1">
           <button
             onClick={() => setType("MARTINS")}
             className={clsx(
-              "flex-1 rounded-md py-1.5 text-sm font-medium transition",
+              "flex-1 rounded-md py-1.5 text-xs font-medium transition sm:text-sm",
               type === "MARTINS" ? "bg-white text-ink-950 shadow-card" : "text-ink-600"
             )}
           >
@@ -83,11 +83,20 @@ export function UploadPanel({ open, onClose, onSuccess }: Props) {
           <button
             onClick={() => setType("COMPETITOR")}
             className={clsx(
-              "flex-1 rounded-md py-1.5 text-sm font-medium transition",
+              "flex-1 rounded-md py-1.5 text-xs font-medium transition sm:text-sm",
               type === "COMPETITOR" ? "bg-white text-ink-950 shadow-card" : "text-ink-600"
             )}
           >
             Concorrente
+          </button>
+          <button
+            onClick={() => setType("CADGER")}
+            className={clsx(
+              "flex-1 rounded-md py-1.5 text-xs font-medium transition sm:text-sm",
+              type === "CADGER" ? "bg-white text-ink-950 shadow-card" : "text-ink-600"
+            )}
+          >
+            CADGER
           </button>
         </div>
 
@@ -101,6 +110,12 @@ export function UploadPanel({ open, onClose, onSuccess }: Props) {
               className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-accent"
             />
           </div>
+        )}
+
+        {type === "CADGER" && (
+          <p className="mt-3 rounded-lg bg-warn-bg px-3 py-2 text-xs text-warn">
+            Esse envio substitui todo o cadastro anterior do CADGER (é um cadastro mensal, não acumula).
+          </p>
         )}
 
         <label className="mt-3 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-line bg-surface px-4 py-8 text-center hover:border-accent">
@@ -123,7 +138,11 @@ export function UploadPanel({ open, onClose, onSuccess }: Props) {
               result.ok ? "bg-good-bg text-good" : "bg-bad-bg text-bad"
             )}
           >
-            {result.ok ? <CheckCircle2 size={16} className="mt-0.5 shrink-0" /> : <AlertCircle size={16} className="mt-0.5 shrink-0" />}
+            {result.ok ? (
+              <CheckCircle2 size={16} className="mt-0.5 shrink-0" />
+            ) : (
+              <AlertCircle size={16} className="mt-0.5 shrink-0" />
+            )}
             <span>{result.message}</span>
           </div>
         )}
