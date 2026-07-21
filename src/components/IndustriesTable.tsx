@@ -13,8 +13,8 @@ export function IndustriesTable({ industries, hasCadger }: Props) {
       <div className="rounded-lg border border-dashed border-line bg-white p-4 text-center">
         <h3 className="font-display text-xs font-semibold text-ink-950">Visão por indústria</h3>
         <p className="mt-1 text-xs text-ink-600">
-          Envie a planilha CADGER para comparar, por fornecedor, itens ativos na Martins x cadastrados no
-          concorrente.
+          Envie a planilha de um concorrente (ex: Colgate, Johnson & Johnson) para ver aqui a comparação
+          daquela indústria.
         </p>
       </div>
     );
