@@ -88,11 +88,12 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
   return (
     <div className="rounded-xl border border-line bg-white shadow-card">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[900px] border-collapse">
+        <table className="w-full min-w-[1000px] border-collapse">
           <thead className="sticky top-0 border-b border-line bg-surface">
             <tr>
               <SortHeader label="EAN" field="ean" sortBy={sortBy} sortDir={sortDir} onSort={onSort} />
               <SortHeader label="Descrição" field="description" sortBy={sortBy} sortDir={sortDir} onSort={onSort} />
+              <SortHeader label="Fornecedor" field="supplier" sortBy={sortBy} sortDir={sortDir} onSort={onSort} />
               <SortHeader label="Preço Martins" field="martinsPrice" sortBy={sortBy} sortDir={sortDir} onSort={onSort} align="right" />
               <SortHeader label="Preço Mercado" field="marketPrice" sortBy={sortBy} sortDir={sortDir} onSort={onSort} align="right" />
               <th className="whitespace-nowrap px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-ink-600">Concorrente</th>
@@ -104,7 +105,7 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
             {loading &&
               Array.from({ length: 8 }).map((_, i) => (
                 <tr key={i} className="border-b border-line/60">
-                  <td colSpan={7} className="px-4 py-3">
+                  <td colSpan={8} className="px-4 py-3">
                     <div className="h-4 w-full animate-pulse rounded bg-line/60" />
                   </td>
                 </tr>
@@ -112,7 +113,7 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
 
             {!loading && rows.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-sm text-ink-600">
+                <td colSpan={8} className="px-4 py-12 text-center text-sm text-ink-600">
                   Nenhum produto encontrado com esses filtros.
                 </td>
               </tr>
@@ -122,9 +123,18 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
               rows.map((r) => (
                 <tr key={r.id} className="border-b border-line/60 hover:bg-surface/60">
                   <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-ink-700">{r.ean}</td>
-                  <td className="max-w-[280px] truncate px-4 py-3 text-sm text-ink-950" title={r.description}>
+                  <td className="max-w-[240px] truncate px-4 py-3 text-sm text-ink-950" title={r.description}>
                     {r.description}
                     {r.category && <div className="text-xs text-ink-500">{r.category}</div>}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3">
+                    {r.supplier ? (
+                      <span className="inline-flex items-center rounded-full bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent-dark">
+                        {r.supplier}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-ink-500">—</span>
+                    )}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium tabular-nums text-ink-950">
                     {money(r.martinsPrice)}
