@@ -8,32 +8,13 @@ interface Props {
   hasCadger: boolean;
 }
 
-function Square({
-  label,
-  value,
-  sub,
-  accent
-}: {
-  label: string;
-  value: string;
-  sub: string;
-  accent: "accent" | "warn" | "good" | "bad" | "ink";
-}) {
-  const accentClasses: Record<string, string> = {
-    accent: "text-accent-dark",
-    warn: "text-warn",
-    good: "text-good",
-    bad: "text-bad",
-    ink: "text-ink-700"
-  };
-
+function Stat({ label, value, accent }: { label: string; value: string; accent: string }) {
   return (
-    <div className="flex h-[64px] flex-col items-center justify-center rounded-md border border-line bg-white px-1.5 py-1 text-center">
-      <span className="text-[9px] font-semibold uppercase tracking-wide text-ink-500">{label}</span>
-      <span className={clsx("font-display text-base font-bold tabular-nums leading-tight", accentClasses[accent])}>
-        {value}
+    <div className="flex flex-1 flex-col items-center justify-center rounded border border-line bg-white px-1 py-1">
+      <span className={clsx("text-sm font-bold tabular-nums leading-none", accent)}>{value}</span>
+      <span className="mt-0.5 text-[8px] font-medium uppercase tracking-wide text-ink-500 leading-none">
+        {label}
       </span>
-      <span className="text-[8px] leading-tight text-ink-500">{sub}</span>
     </div>
   );
 }
@@ -54,42 +35,26 @@ export function IndustriesTable({ industries, hasCadger }: Props) {
   return (
     <div className="rounded-lg border border-line bg-white p-3 shadow-card">
       <h3 className="font-display text-xs font-semibold text-ink-950">Visão por indústria</h3>
-      <p className="mt-0.5 text-[11px] text-ink-600">
-        Quanto a Martins tem ativo contra quanto o concorrente tem cadastrado
-      </p>
+      <p className="mt-0.5 text-[11px] text-ink-600">Martins ativo x concorrente cadastrado, por indústria</p>
 
-      <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
         {industries.map((i) => {
-          const indisponivel = i.itensConcorrenteCadastrados - i.itensConcorrenteComPreco;
           const diferencaLabel = i.diferenca > 0 ? `+${i.diferenca}` : `${i.diferenca}`;
-          const diferencaSub =
-            i.diferenca > 0 ? "conc. tem mais" : i.diferenca < 0 ? "Martins tem mais" : "empatado";
-          const diferencaAccent = i.diferenca > 0 ? "bad" : i.diferenca < 0 ? "good" : "ink";
+          const diferencaAccent =
+            i.diferenca > 0 ? "text-bad" : i.diferenca < 0 ? "text-good" : "text-ink-500";
 
           return (
-            <div key={i.fornecedor} className="rounded-md border border-line bg-surface/50 p-2">
-              <div className="mb-1.5 truncate text-[11px] font-semibold text-ink-950" title={i.fornecedor}>
+            <div
+              key={i.fornecedor}
+              className="flex items-center gap-2 rounded-md border border-line bg-surface/50 p-1.5"
+            >
+              <div className="min-w-0 flex-1 truncate text-[11px] font-medium text-ink-950" title={i.fornecedor}>
                 {i.fornecedor}
               </div>
-              <div className="grid grid-cols-3 gap-1.5">
-                <Square
-                  label="Martins"
-                  value={String(i.itensMartins)}
-                  sub={`${i.cadastrados} cad · ${i.ruptura} rupt`}
-                  accent="accent"
-                />
-                <Square
-                  label="Concorrente"
-                  value={String(i.itensConcorrenteCadastrados)}
-                  sub={`${indisponivel} indisp.`}
-                  accent="warn"
-                />
-                <Square
-                  label="Diferença"
-                  value={diferencaLabel}
-                  sub={diferencaSub}
-                  accent={diferencaAccent as "good" | "bad" | "ink"}
-                />
+              <div className="flex shrink-0 gap-1">
+                <Stat label="Martins" value={String(i.itensMartins)} accent="text-accent-dark" />
+                <Stat label="Concor." value={String(i.itensConcorrenteCadastrados)} accent="text-warn" />
+                <Stat label="Difer." value={diferencaLabel} accent={diferencaAccent} />
               </div>
             </div>
           );
