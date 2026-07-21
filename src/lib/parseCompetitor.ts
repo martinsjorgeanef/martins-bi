@@ -4,7 +4,7 @@ import { ParseResult } from "./parseMartins";
 export interface ParsedCompetitorRow {
   ean: string;
   description: string;
-  price: number;
+  price: number | null;
 }
 
 export function parseCompetitorFile(buffer: Buffer): ParseResult<ParsedCompetitorRow> {
@@ -21,15 +21,16 @@ export function parseCompetitorFile(buffer: Buffer): ParseResult<ParsedCompetito
     const descRaw = line["Descrição"];
 
     const ean = normalizeEan(eanRaw);
-    const price = toNumber(priceRaw);
     const description = typeof descRaw === "string" ? descRaw.trim() : "";
 
-    if (!ean || price === null || price <= 0) {
+    if (!ean || !description) {
       skipped++;
       continue;
     }
 
-    rows.push({ ean, description, price });
+    const price = toNumber(priceRaw);
+
+    rows.push({ ean, description, price: price !== null && price > 0 ? price : null });
   }
 
   return { rows, totalRows: raw.length, skipped };
