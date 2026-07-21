@@ -63,7 +63,7 @@ export async function GET() {
     ],
     topDisadvantage: worst.slice(0, 8).map((w) => ({
       ean: w.ean,
-      description: w.description.length > 32 ? w.description.slice(0, 32) + "…" : w.description,
+      description: w.description.length > 18 ? w.description.slice(0, 18) + "…" : w.description,
       diffPct: Math.round(w.diffPct * 1000) / 10
     }))
   });
