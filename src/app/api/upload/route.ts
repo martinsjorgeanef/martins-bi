@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { parseMartinsFile } from "@/lib/parseMartins";
 import { parseCompetitorFile } from "@/lib/parseCompetitor";
+import { parseCadgerFile } from "@/lib/parseCadger";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -10,13 +11,13 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
-    const type = formData.get("type") as string | null; // "MARTINS" | "COMPETITOR"
+    const type = formData.get("type") as string | null; // "MARTINS" | "COMPETITOR" | "CADGER"
     const sourceName = (formData.get("sourceName") as string | null)?.trim() || null;
 
     if (!file) {
       return NextResponse.json({ error: "Nenhum arquivo enviado." }, { status: 400 });
     }
-    if (type !== "MARTINS" && type !== "COMPETITOR") {
+    if (type !== "MARTINS" && type !== "COMPETITOR" && type !== "CADGER") {
       return NextResponse.json({ error: "Tipo de upload inválido." }, { status: 400 });
     }
     if (type === "COMPETITOR" && !sourceName) {
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
         });
         existing ? updated++ : created++;
       }
-    } else {
+    } else if (type === "COMPETITOR") {
       const { rows, totalRows, skipped: parseSkipped } = parseCompetitorFile(buffer);
       processed = totalRows;
       skipped = parseSkipped;
@@ -98,6 +99,27 @@ export async function POST(req: NextRequest) {
           }
         });
         existing ? updated++ : created++;
+      }
+    } else {
+      // CADGER: substitui totalmente a base anterior (é um cadastro mensal)
+      const { rows, totalRows, skipped: parseSkipped } = parseCadgerFile(buffer);
+      processed = totalRows;
+      skipped = parseSkipped;
+
+      await prisma.cadgerItem.deleteMany({});
+
+      const BATCH = 500;
+      for (let i = 0; i < rows.length; i += BATCH) {
+        const batch = rows.slice(i, i + BATCH);
+        await prisma.cadgerItem.createMany({
+          data: batch.map((r) => ({
+            ean: r.ean,
+            fornecedor: r.fornecedor,
+            description: r.description
+          })),
+          skipDuplicates: true
+        });
+        created += batch.length;
       }
     }
 
