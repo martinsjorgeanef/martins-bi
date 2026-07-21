@@ -16,9 +16,13 @@ export async function GET() {
   const productByEan = new Map(products.map((p) => [p.ean, p]));
 
   const catalogItems = await prisma.competitorCatalogItem.findMany();
-  const concorrenteCountByFornecedor = new Map<string, number>();
+  type ConcAgg = { cadastrados: number; comPreco: number };
+  const concByFornecedor = new Map();
   for (const c of catalogItems) {
-    concorrenteCountByFornecedor.set(c.fornecedor, (concorrenteCountByFornecedor.get(c.fornecedor) ?? 0) + 1);
+    const entry: ConcAgg = concByFornecedor.get(c.fornecedor) ?? { cadastrados: 0, comPreco: 0 };
+    entry.cadastrados++;
+    if (c.price !== null) entry.comPreco++;
+    concByFornecedor.set(c.fornecedor, entry);
   }
 
   type FornecedorAgg = { cadastrados: number; itensMartins: number };
@@ -33,13 +37,14 @@ export async function GET() {
 
   const industries = Array.from(byFornecedor.entries())
     .map(([fornecedor, data]: [string, FornecedorAgg]) => {
-      const itensConcorrente = concorrenteCountByFornecedor.get(fornecedor) ?? 0;
+      const conc: ConcAgg = concByFornecedor.get(fornecedor) ?? { cadastrados: 0, comPreco: 0 };
       return {
         fornecedor,
         cadastrados: data.cadastrados,
         itensMartins: data.itensMartins,
-        itensConcorrente,
-        diferenca: itensConcorrente - data.itensMartins,
+        itensConcorrenteCadastrados: conc.cadastrados,
+        itensConcorrenteComPreco: conc.comPreco,
+        diferenca: conc.cadastrados - data.itensMartins,
         ruptura: data.cadastrados - data.itensMartins
       };
     })
