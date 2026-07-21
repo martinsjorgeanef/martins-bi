@@ -70,7 +70,10 @@ export async function POST(req: NextRequest) {
       skipped = parseSkipped;
 
       for (const row of rows) {
-        // Registra no catálogo do concorrente por indústria, exista ou não na Martins
+        const existingCatalog = await prisma.competitorCatalogItem.findUnique({
+          where: { ean_competitorName: { ean: row.ean, competitorName: sourceName! } }
+        });
+
         await prisma.competitorCatalogItem.upsert({
           where: { ean_competitorName: { ean: row.ean, competitorName: sourceName! } },
           create: {
@@ -84,19 +87,12 @@ export async function POST(req: NextRequest) {
             price: row.price
           }
         });
+        existingCatalog ? updated++ : created++;
 
-        // Mantém a comparação de preço só para itens que a Martins já tem
+        if (row.price === null) continue;
+
         const product = await prisma.product.findUnique({ where: { ean: row.ean } });
-        if (!product) {
-          skipped++;
-          continue;
-        }
-
-        const existing = await prisma.competitorPrice.findUnique({
-          where: {
-            productId_competitorName: { productId: product.id, competitorName: sourceName! }
-          }
-        });
+        if (!product) continue;
 
         await prisma.competitorPrice.upsert({
           where: {
@@ -105,7 +101,6 @@ export async function POST(req: NextRequest) {
           create: { productId: product.id, competitorName: sourceName!, price: row.price },
           update: { price: row.price }
         });
-        existing ? updated++ : created++;
       }
     }
 
@@ -121,7 +116,14 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    return NextResponse.json({ success: true, processed, created, updated, skipped });
+    return NextResponse.json({
+      success: true,
+      processed,
+      created,
+      updated,
+      skipped,
+      fornecedor: fornecedorField
+    });
   } catch (err) {
     console.error(err);
     return NextResponse.json(
