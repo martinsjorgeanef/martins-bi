@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { parseMartinsFile } from "@/lib/parseMartins";
 import { parseCompetitorFile } from "@/lib/parseCompetitor";
-import { parseCadgerFile } from "@/lib/parseCadger";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -13,16 +12,20 @@ export async function POST(req: NextRequest) {
     const file = formData.get("file") as File | null;
     const type = formData.get("type") as string | null;
     const sourceName = (formData.get("sourceName") as string | null)?.trim() || null;
+    const fornecedorField = (formData.get("fornecedor") as string | null)?.trim() || null;
 
     if (!file) {
       return NextResponse.json({ error: "Nenhum arquivo enviado." }, { status: 400 });
     }
-    if (type !== "MARTINS" && type !== "COMPETITOR" && type !== "CADGER") {
+    if (type !== "MARTINS" && type !== "COMPETITOR") {
       return NextResponse.json({ error: "Tipo de upload inválido." }, { status: 400 });
     }
     if (type === "COMPETITOR" && !sourceName) {
+      return NextResponse.json({ error: "Informe o nome do distribuidor concorrente." }, { status: 400 });
+    }
+    if (type === "COMPETITOR" && !fornecedorField) {
       return NextResponse.json(
-        { error: "Informe o nome do distribuidor concorrente." },
+        { error: "Informe a indústria/fornecedor desse lote do concorrente." },
         { status: 400 }
       );
     }
@@ -61,12 +64,28 @@ export async function POST(req: NextRequest) {
         });
         existing ? updated++ : created++;
       }
-    } else if (type === "COMPETITOR") {
+    } else {
       const { rows, totalRows, skipped: parseSkipped } = parseCompetitorFile(buffer);
       processed = totalRows;
       skipped = parseSkipped;
 
       for (const row of rows) {
+        // Registra no catálogo do concorrente por indústria, exista ou não na Martins
+        await prisma.competitorCatalogItem.upsert({
+          where: { ean_competitorName: { ean: row.ean, competitorName: sourceName! } },
+          create: {
+            ean: row.ean,
+            fornecedor: fornecedorField!,
+            competitorName: sourceName!,
+            price: row.price
+          },
+          update: {
+            fornecedor: fornecedorField!,
+            price: row.price
+          }
+        });
+
+        // Mantém a comparação de preço só para itens que a Martins já tem
         const product = await prisma.product.findUnique({ where: { ean: row.ean } });
         if (!product) {
           skipped++;
@@ -75,50 +94,18 @@ export async function POST(req: NextRequest) {
 
         const existing = await prisma.competitorPrice.findUnique({
           where: {
-            productId_competitorName: {
-              productId: product.id,
-              competitorName: sourceName!
-            }
+            productId_competitorName: { productId: product.id, competitorName: sourceName! }
           }
         });
 
         await prisma.competitorPrice.upsert({
           where: {
-            productId_competitorName: {
-              productId: product.id,
-              competitorName: sourceName!
-            }
+            productId_competitorName: { productId: product.id, competitorName: sourceName! }
           },
-          create: {
-            productId: product.id,
-            competitorName: sourceName!,
-            price: row.price
-          },
-          update: {
-            price: row.price
-          }
+          create: { productId: product.id, competitorName: sourceName!, price: row.price },
+          update: { price: row.price }
         });
         existing ? updated++ : created++;
-      }
-    } else {
-      const { rows, totalRows, skipped: parseSkipped } = parseCadgerFile(buffer);
-      processed = totalRows;
-      skipped = parseSkipped;
-
-      await prisma.cadgerItem.deleteMany({});
-
-      const BATCH = 3000;
-      for (let i = 0; i < rows.length; i += BATCH) {
-        const batch = rows.slice(i, i + BATCH);
-        await prisma.cadgerItem.createMany({
-          data: batch.map((r) => ({
-            ean: r.ean,
-            fornecedor: r.fornecedor,
-            description: r.description
-          })),
-          skipDuplicates: true
-        });
-        created += batch.length;
       }
     }
 
@@ -134,13 +121,7 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    return NextResponse.json({
-      success: true,
-      processed,
-      created,
-      updated,
-      skipped
-    });
+    return NextResponse.json({ success: true, processed, created, updated, skipped });
   } catch (err) {
     console.error(err);
     return NextResponse.json(
@@ -151,9 +132,6 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
-  const logs = await prisma.uploadLog.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 20
-  });
+  const logs = await prisma.uploadLog.findMany({ orderBy: { createdAt: "desc" }, take: 20 });
   return NextResponse.json({ logs });
 }
