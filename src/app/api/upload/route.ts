@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
-    const type = formData.get("type") as string | null; // "MARTINS" | "COMPETITOR" | "CADGER"
+    const type = formData.get("type") as string | null;
     const sourceName = (formData.get("sourceName") as string | null)?.trim() || null;
 
     if (!file) {
@@ -101,14 +101,13 @@ export async function POST(req: NextRequest) {
         existing ? updated++ : created++;
       }
     } else {
-      // CADGER: substitui totalmente a base anterior (é um cadastro mensal)
       const { rows, totalRows, skipped: parseSkipped } = parseCadgerFile(buffer);
       processed = totalRows;
       skipped = parseSkipped;
 
       await prisma.cadgerItem.deleteMany({});
 
-      const BATCH = 500;
+      const BATCH = 3000;
       for (let i = 0; i < rows.length; i += BATCH) {
         const batch = rows.slice(i, i + BATCH);
         await prisma.cadgerItem.createMany({
