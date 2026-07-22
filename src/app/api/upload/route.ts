@@ -69,25 +69,41 @@ export async function POST(req: NextRequest) {
       processed = totalRows;
       skipped = parseSkipped;
 
-      for (const row of rows) {
-        const existingCatalog = await prisma.competitorCatalogItem.findUnique({
-          where: { ean_competitorName: { ean: row.ean, competitorName: sourceName! } }
-        });
+      // Substitui totalmente os itens dessa indústria+concorrente (não acumula lixo de envios antigos)
+      const oldItems = await prisma.competitorCatalogItem.findMany({
+        where: { fornecedor: fornecedorField!, competitorName: sourceName! },
+        select: { ean: true }
+      });
+      const oldEans = oldItems.map((o) => o.ean);
 
-        await prisma.competitorCatalogItem.upsert({
-          where: { ean_competitorName: { ean: row.ean, competitorName: sourceName! } },
-          create: {
+      if (oldEans.length > 0) {
+        const oldProducts = await prisma.product.findMany({
+          where: { ean: { in: oldEans } },
+          select: { id: true }
+        });
+        const oldProductIds = oldProducts.map((p) => p.id);
+
+        if (oldProductIds.length > 0) {
+          await prisma.competitorPrice.deleteMany({
+            where: { productId: { in: oldProductIds }, competitorName: sourceName! }
+          });
+        }
+      }
+
+      await prisma.competitorCatalogItem.deleteMany({
+        where: { fornecedor: fornecedorField!, competitorName: sourceName! }
+      });
+
+      for (const row of rows) {
+        await prisma.competitorCatalogItem.create({
+          data: {
             ean: row.ean,
             fornecedor: fornecedorField!,
             competitorName: sourceName!,
             price: row.price
-          },
-          update: {
-            fornecedor: fornecedorField!,
-            price: row.price
           }
         });
-        existingCatalog ? updated++ : created++;
+        created++;
 
         if (row.price === null) continue;
 
