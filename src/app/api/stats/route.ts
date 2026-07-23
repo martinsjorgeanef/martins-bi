@@ -24,11 +24,16 @@ export async function GET() {
   const worst: { ean: string; description: string; diffPct: number; category: string | null }[] = [];
 
   for (const p of products) {
-    if (p.category) categoriesSet.add(p.category);
-    if (p.supplier && p.competitorPrices.length > 0) suppliersSet.add(p.supplier);
-    for (const c of p.competitorPrices) competitorsSet.add(c.competitorName);
+    const hasCompetitorData = p.competitorPrices.length > 0;
 
-    if (p.competitorPrices.length === 0) continue;
+    // Categorias e fornecedores no filtro só contam quem tem comparação de concorrente ativa agora
+    if (hasCompetitorData) {
+      if (p.category) categoriesSet.add(p.category);
+      if (p.supplier) suppliersSet.add(p.supplier);
+      for (const c of p.competitorPrices) competitorsSet.add(c.competitorName);
+    }
+
+    if (!hasCompetitorData) continue;
     matched++;
 
     const best = p.competitorPrices.reduce((min, c) => (c.price < min.price ? c : min));
@@ -46,7 +51,7 @@ export async function GET() {
   worst.sort((a, b) => a.diffPct - b.diffPct);
 
   return NextResponse.json({
-    totalProducts: products.length,
+    totalProducts: matched,
     matchedProducts: matched,
     competitive,
     attention,
