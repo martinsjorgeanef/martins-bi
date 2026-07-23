@@ -49,10 +49,10 @@ export async function GET() {
 
   worst.sort((a, b) => a.diffPct - b.diffPct);
 
-  const top10 = worst.slice(0, 10);
-  const top10Eans = top10.map((w) => w.ean);
+const top20 = worst.slice(0, 20);
+  const top20Eans = top20.map((w) => w.ean);
   const cadgerMatches = await prisma.cadgerItem.findMany({
-    where: { ean: { in: top10Eans } },
+    where: { ean: { in: top20Eans } },
     select: { ean: true, description: true }
   });
   const longDescByEan = new Map(cadgerMatches.map((c) => [c.ean, c.description]));
@@ -73,7 +73,7 @@ export async function GET() {
       { name: "Negociação pontual", value: attention, key: "ATENCAO" },
       { name: "Desvantagem", value: disadvantage, key: "DESVANTAGEM" }
     ],
-    topDisadvantage: top10.map((w) => ({
+    topDisadvantage: top20.map((w) => ({
       ean: w.ean,
       description: longDescByEan.get(w.ean) || w.description,
       category: w.category,
