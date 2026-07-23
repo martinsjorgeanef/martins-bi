@@ -7,6 +7,7 @@ import { PriorityActions } from "./PriorityActions";
 import { PriorityVendorCard } from "./PriorityVendorCard";
 import { CategoryTable } from "./CategoryTable";
 import { TopDisadvantageChart } from "./Charts";
+import { OpportunitiesInsights } from "./OpportunitiesInsights";
 import { Filters } from "./Filters";
 import { ProductsTable } from "./ProductsTable";
 import { UploadPanel } from "./UploadPanel";
@@ -131,7 +132,9 @@ export function Dashboard() {
 
   function handleSort(field: string) {
     if (field === sortBy) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+      setSortDir(function (d) {
+        return d === "asc" ? "desc" : "asc";
+      });
     } else {
       setSortBy(field);
       setSortDir("asc");
@@ -169,11 +172,13 @@ export function Dashboard() {
             </div>
             <div>
               <h1 className="text-[14px] font-semibold leading-tight text-white">Painel de Competitividade</h1>
-              <p className="text-[11px] leading-tight text-white/50">Martins × Mercado</p>
+              <p className="text-[11px] leading-tight text-white/50">Martins x Mercado</p>
             </div>
           </div>
           <button
-            onClick={() => setUploadOpen(true)}
+            onClick={function () {
+              setUploadOpen(true);
+            }}
             className="flex items-center gap-2 rounded-lg bg-accent px-3.5 py-2 text-[13px] font-medium text-white transition hover:bg-accent-dark"
           >
             <UploadCloud size={16} />
@@ -183,47 +188,58 @@ export function Dashboard() {
       </header>
 
       <main className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-6 lg:px-6">
-        {!statsLoading && stats && stats.matchedProducts === 0 && (
+        {!statsLoading && stats && stats.matchedProducts === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-xl bg-white p-10 text-center shadow-card">
             <UploadCloud size={28} className="text-accent" />
             <h2 className="text-[16px] font-semibold text-ink-950">Nenhum dado carregado ainda</h2>
             <p className="max-w-md text-[13px] text-ink-600">
-              Envie primeiro a planilha de preços da Martins e depois a planilha de um concorrente para começar a
-              comparar preços.
+              Envie primeiro a planilha de precos da Martins e depois a planilha de um concorrente para comecar a
+              comparar precos.
             </p>
             <button
-              onClick={() => setUploadOpen(true)}
+              onClick={function () {
+                setUploadOpen(true);
+              }}
               className="mt-1 rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-dark"
             >
               Enviar primeira planilha
             </button>
           </div>
-        )}
+        ) : null}
 
         <KpiCards stats={stats} loading={statsLoading} />
 
-        {stats && <ExecutiveSummary stats={stats} industries={industries} categories={categories} />}
+        {stats ? <ExecutiveSummary stats={stats} industries={industries} categories={categories} /> : null}
 
-        {stats && (
+        {stats ? (
           <PriorityActions
             competitive={stats.competitive}
             disadvantage={stats.disadvantage}
             industry={industries[0]}
             categories={categories}
           />
-        )}
+        ) : null}
 
         <PriorityVendorCard industry={industries[0]} />
 
         <div className="rounded-xl bg-white p-4 shadow-card">
-          <h3 className="text-[16px] font-semibold text-ink-950">Análise por Categoria</h3>
+          <h3 className="text-[16px] font-semibold text-ink-950">Analise por Categoria</h3>
           <p className="mt-0.5 text-[12px] text-ink-500">Da pior para a melhor competitividade</p>
           <div className="mt-3">
             <CategoryTable categories={categories} />
           </div>
         </div>
 
-        {stats && <TopDisadvantageChart data={stats.topDisadvantage} />}
+        {stats ? (
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+            <div className="lg:col-span-3">
+              <TopDisadvantageChart data={stats.topDisadvantage} />
+            </div>
+            <div className="lg:col-span-2">
+              <OpportunitiesInsights items={stats.topDisadvantage} />
+            </div>
+          </div>
+        ) : null}
 
         <Filters
           search={search}
@@ -236,9 +252,9 @@ export function Dashboard() {
           onCompetitor={setCompetitor}
           supplier={supplier}
           onSupplier={setSupplier}
-          categories={stats?.categories ?? []}
-          competitorNames={stats?.competitorNames ?? []}
-          supplierNames={stats?.supplierNames ?? []}
+          categories={stats ? stats.categories : []}
+          competitorNames={stats ? stats.competitorNames : []}
+          supplierNames={stats ? stats.supplierNames : []}
           threshold={threshold}
           onThreshold={handleThresholdChange}
         />
@@ -260,7 +276,7 @@ export function Dashboard() {
         />
       </main>
 
-      <UploadPanel open={uploadOpen} onClose={() => setUploadOpen(false)} onSuccess={handleUploadSuccess} />
+      <UploadPanel open={uploadOpen} onClose={function () { setUploadOpen(false); }} onSuccess={handleUploadSuccess} />
     </div>
   );
 }
