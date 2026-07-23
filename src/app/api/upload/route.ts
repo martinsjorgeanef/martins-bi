@@ -69,30 +69,8 @@ export async function POST(req: NextRequest) {
       processed = totalRows;
       skipped = parseSkipped;
 
-      // Substitui totalmente os itens dessa indústria+concorrente (não acumula lixo de envios antigos)
-      const oldItems = await prisma.competitorCatalogItem.findMany({
-        where: { fornecedor: fornecedorField!, competitorName: sourceName! },
-        select: { ean: true }
-      });
-      const oldEans = oldItems.map((o) => o.ean);
-
-      if (oldEans.length > 0) {
-        const oldProducts = await prisma.product.findMany({
-          where: { ean: { in: oldEans } },
-          select: { id: true }
-        });
-        const oldProductIds = oldProducts.map((p) => p.id);
-
-        if (oldProductIds.length > 0) {
-          await prisma.competitorPrice.deleteMany({
-            where: { productId: { in: oldProductIds }, competitorName: sourceName! }
-          });
-        }
-      }
-
-      await prisma.competitorCatalogItem.deleteMany({
-        where: { fornecedor: fornecedorField!, competitorName: sourceName! }
-      });
+      // "Visão por indústria" sempre mostra só a última indústria enviada: apaga tudo antes de gravar a nova
+      await prisma.competitorCatalogItem.deleteMany({});
 
       for (const row of rows) {
         await prisma.competitorCatalogItem.create({
