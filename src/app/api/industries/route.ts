@@ -15,7 +15,6 @@ export async function GET() {
     return NextResponse.json({ industries: [], hasCadger: false });
   }
 
-  // Só considera as indústrias que realmente têm planilha de concorrente importada agora
   const fornecedoresImportados = Array.from(new Set(catalogItems.map((c) => c.fornecedor)));
 
   const cadgerItems = await prisma.cadgerItem.findMany({
@@ -44,23 +43,31 @@ export async function GET() {
     attention: number;
     disadvantage: number;
     matched: number;
+    disadvantageCategories: Set<string>;
+    allCategories: Set<string>;
   };
   const byFornecedor = new Map<string, FornecedorAgg>();
 
   for (const item of cadgerItems) {
-    const entry = byFornecedor.get(item.fornecedor) ?? {
-      cadastrados: 0,
-      itensMartins: 0,
-      competitive: 0,
-      attention: 0,
-      disadvantage: 0,
-      matched: 0
-    };
+    const entry =
+      byFornecedor.get(item.fornecedor) ??
+      ({
+        cadastrados: 0,
+        itensMartins: 0,
+        competitive: 0,
+        attention: 0,
+        disadvantage: 0,
+        matched: 0,
+        disadvantageCategories: new Set<string>(),
+        allCategories: new Set<string>()
+      } as FornecedorAgg);
     entry.cadastrados++;
 
     const product = productByEan.get(item.ean);
     if (product) {
       entry.itensMartins++;
+      if (product.category) entry.allCategories.add(product.category);
+
       if (product.competitorPrices.length > 0) {
         entry.matched++;
         const best = product.competitorPrices.reduce((min, c) => (c.price < min.price ? c : min));
@@ -68,7 +75,10 @@ export async function GET() {
         const status = calcStatus(diffPct, thresholdFraction);
         if (status === "COMPETITIVO") entry.competitive++;
         else if (status === "ATENCAO") entry.attention++;
-        else entry.disadvantage++;
+        else {
+          entry.disadvantage++;
+          if (product.category) entry.disadvantageCategories.add(product.category);
+        }
       }
     }
 
@@ -77,14 +87,18 @@ export async function GET() {
 
   const industries = fornecedoresImportados
     .map((fornecedor) => {
-      const data = byFornecedor.get(fornecedor) ?? {
-        cadastrados: 0,
-        itensMartins: 0,
-        competitive: 0,
-        attention: 0,
-        disadvantage: 0,
-        matched: 0
-      };
+      const data =
+        byFornecedor.get(fornecedor) ??
+        ({
+          cadastrados: 0,
+          itensMartins: 0,
+          competitive: 0,
+          attention: 0,
+          disadvantage: 0,
+          matched: 0,
+          disadvantageCategories: new Set<string>(),
+          allCategories: new Set<string>()
+        } as FornecedorAgg);
       const conc = concByFornecedor.get(fornecedor)!;
       const competitivePct = data.matched > 0 ? Math.round((data.competitive / data.matched) * 1000) / 10 : 0;
       const diferenca = conc.cadastrados - data.itensMartins;
@@ -101,6 +115,11 @@ export async function GET() {
         summary = "Competitividade abaixo do esperado. Priorizar negociação nesta indústria.";
       }
 
+      const categoriesAffected =
+        data.disadvantageCategories.size > 0
+          ? Array.from(data.disadvantageCategories)
+          : Array.from(data.allCategories).slice(0, 3);
+
       return {
         fornecedor,
         cadastrados: data.cadastrados,
@@ -112,7 +131,8 @@ export async function GET() {
         competitivePct,
         disadvantage: data.disadvantage,
         priority: priorityForCompetitivePct(competitivePct),
-        summary
+        summary,
+        categoriesAffected
       };
     })
     .sort((a, b) => b.itensConcorrenteCadastrados - a.itensConcorrenteCadastrados);
