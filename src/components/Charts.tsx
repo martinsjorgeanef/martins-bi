@@ -41,7 +41,7 @@ export function StatusDistributionChart({
   );
 }
 
-interface DisadvantageItem {
+export interface DisadvantageItem {
   ean: string;
   description: string;
   category: string | null;
@@ -49,7 +49,9 @@ interface DisadvantageItem {
 }
 
 export function TopDisadvantageChart({ data }: { data: DisadvantageItem[] }) {
-  if (data.length === 0 || data.every((d) => d.diffPct >= 5)) {
+  const top5 = data.slice(0, 5);
+
+  if (top5.length === 0 || top5.every((d) => d.diffPct >= 5)) {
     return (
       <div className="rounded-xl bg-white p-4 shadow-card">
         <h3 className="text-[16px] font-semibold text-ink-950">Maiores desvantagens de preco</h3>
@@ -62,25 +64,24 @@ export function TopDisadvantageChart({ data }: { data: DisadvantageItem[] }) {
 
   return (
     <div className="rounded-xl bg-white p-4 shadow-card">
-      <div className="flex items-baseline justify-between">
-        <h3 className="text-[16px] font-semibold text-ink-950">Maiores desvantagens de preco</h3>
-        <span className="text-[12px] text-ink-500">Top {Math.min(data.length, 10)}</span>
-      </div>
+      <h3 className="text-[16px] font-semibold text-ink-950">Maiores desvantagens de preco</h3>
+      <p className="mt-0.5 text-[12px] text-ink-500">Os 5 itens mais criticos</p>
 
       <div className="mt-2 flex flex-col">
-        {data.map((d, idx) => (
-          <div key={d.ean} className="flex items-center gap-2 border-b border-line/60 py-1.5 last:border-b-0">
-            <span className="w-4 shrink-0 text-right text-[12px] font-semibold text-ink-500">{idx + 1}</span>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-[13px] text-ink-950" title={d.description}>
+        {top5.map((d) => (
+          <div key={d.ean} className="border-b border-line/60 py-2 last:border-b-0">
+            <div className="flex items-baseline gap-1.5">
+              <span className="shrink-0 font-mono text-[11px] text-ink-500">{d.ean}</span>
+              <span className="truncate text-[12px] text-ink-950" title={d.description}>
                 {d.description}
-              </div>
-              <div className="flex gap-2 text-[11px] text-ink-500">
-                <span className="font-mono">{d.ean}</span>
-                {d.category ? <span className="truncate">{d.category}</span> : null}
-              </div>
+              </span>
             </div>
-            <span className="shrink-0 text-[13px] font-bold text-bad">{d.diffPct}%</span>
+            <div className="mt-0.5 flex items-center justify-between gap-2">
+              <span className="truncate text-[11px] text-ink-500">
+                {d.category ? "Categoria: " + d.category : "Sem categoria"}
+              </span>
+              <span className="shrink-0 text-[13px] font-bold text-bad">{d.diffPct}%</span>
+            </div>
           </div>
         ))}
       </div>
