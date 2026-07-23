@@ -17,7 +17,7 @@ import { UploadCloud, BarChart3 } from "lucide-react";
 interface StatsResponse extends DashboardStats {
   thresholdPct: number;
   statusDistribution: { name: string; value: number; key: string }[];
-  topDisadvantage: { ean: string; description: string; diffPct: number }[];
+  topDisadvantage: { ean: string; description: string; category: string | null; diffPct: number }[];
 }
 
 export function Dashboard() {
