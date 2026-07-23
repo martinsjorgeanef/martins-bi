@@ -1,22 +1,23 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import Link from "next/link";
 import { KpiCards } from "./KpiCards";
-import { StatusDistributionChart, TopDisadvantageChart } from "./Charts";
-import { InsightsPanel } from "./InsightsPanel";
+import { ExecutiveSummary } from "./ExecutiveSummary";
+import { PriorityActions } from "./PriorityActions";
+import { PriorityVendorCard } from "./PriorityVendorCard";
+import { CategoryTable } from "./CategoryTable";
+import { TopDisadvantageChart } from "./Charts";
 import { Filters } from "./Filters";
 import { ProductsTable } from "./ProductsTable";
-import { IndustriesTable } from "./IndustriesTable";
 import { UploadPanel } from "./UploadPanel";
 import { ExportButtons } from "./ExportButtons";
-import { DashboardStats, ProductRow, IndustryRow } from "@/lib/types";
-import { UploadCloud, BarChart3, ClipboardList, ChevronRight } from "lucide-react";
+import { DashboardStats, ProductRow, IndustryRow, CategoryRow } from "@/lib/types";
+import { UploadCloud, BarChart3 } from "lucide-react";
 
 interface StatsResponse extends DashboardStats {
   thresholdPct: number;
   statusDistribution: { name: string; value: number; key: string }[];
-  topDisadvantage: { ean: string; description: string; diffPct: number; martinsPrice: number; marketPrice: number }[];
+  topDisadvantage: { ean: string; description: string; diffPct: number }[];
 }
 
 export function Dashboard() {
@@ -29,7 +30,7 @@ export function Dashboard() {
   const [totalPages, setTotalPages] = useState(1);
 
   const [industries, setIndustries] = useState<IndustryRow[]>([]);
-  const [hasCadger, setHasCadger] = useState(false);
+  const [categories, setCategories] = useState<CategoryRow[]>([]);
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -75,7 +76,7 @@ export function Dashboard() {
       sortBy,
       sortDir
     });
-    const res = await fetch(`/api/products?${params.toString()}`);
+    const res = await fetch("/api/products?" + params.toString());
     const data = await res.json();
     setRows(data.rows);
     setTotal(data.total);
@@ -86,8 +87,13 @@ export function Dashboard() {
   const loadIndustries = useCallback(async () => {
     const res = await fetch("/api/industries");
     const data = await res.json();
-    setIndustries(data.industries);
-    setHasCadger(data.hasCadger);
+    setIndustries(data.industries || []);
+  }, []);
+
+  const loadCategories = useCallback(async () => {
+    const res = await fetch("/api/categories");
+    const data = await res.json();
+    setCategories(data.categories || []);
   }, []);
 
   const fetchAllFilteredRows = useCallback(async (): Promise<ProductRow[]> => {
@@ -102,7 +108,7 @@ export function Dashboard() {
       sortBy,
       sortDir
     });
-    const res = await fetch(`/api/products?${params.toString()}`);
+    const res = await fetch("/api/products?" + params.toString());
     const data = await res.json();
     return data.rows as ProductRow[];
   }, [debouncedSearch, category, status, competitor, supplier, sortBy, sortDir]);
@@ -118,6 +124,10 @@ export function Dashboard() {
   useEffect(() => {
     loadIndustries();
   }, [loadIndustries]);
+
+  useEffect(() => {
+    loadCategories();
+  }, [loadCategories]);
 
   function handleSort(field: string) {
     if (field === sortBy) {
@@ -137,6 +147,8 @@ export function Dashboard() {
     });
     loadStats();
     loadRows();
+    loadCategories();
+    loadIndustries();
   }
 
   function handleUploadSuccess() {
@@ -144,26 +156,25 @@ export function Dashboard() {
     loadStats();
     loadRows();
     loadIndustries();
+    loadCategories();
   }
 
   return (
     <div className="min-h-screen bg-surface">
       <header className="sticky top-0 z-30 border-b border-line bg-ink-950">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 lg:px-6">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 lg:px-6">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
               <BarChart3 size={18} className="text-white" />
             </div>
             <div>
-              <h1 className="font-display text-sm font-semibold leading-tight text-white">
-                Painel de Competitividade
-              </h1>
+              <h1 className="text-[14px] font-semibold leading-tight text-white">Painel de Competitividade</h1>
               <p className="text-[11px] leading-tight text-white/50">Martins × Mercado</p>
             </div>
           </div>
           <button
             onClick={() => setUploadOpen(true)}
-            className="flex items-center gap-2 rounded-lg bg-accent px-3.5 py-2 text-sm font-medium text-white transition hover:bg-accent-dark"
+            className="flex items-center gap-2 rounded-lg bg-accent px-3.5 py-2 text-[13px] font-medium text-white transition hover:bg-accent-dark"
           >
             <UploadCloud size={16} />
             <span className="hidden sm:inline">Enviar planilha</span>
@@ -171,18 +182,18 @@ export function Dashboard() {
         </div>
       </header>
 
-      <main className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-6 lg:px-6">
+      <main className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-6 lg:px-6">
         {!statsLoading && stats && stats.matchedProducts === 0 && (
           <div className="flex flex-col items-center gap-3 rounded-xl bg-white p-10 text-center shadow-card">
             <UploadCloud size={28} className="text-accent" />
-            <h2 className="font-display text-base font-semibold text-ink-950">Nenhum dado carregado ainda</h2>
-            <p className="max-w-md text-sm text-ink-600">
+            <h2 className="text-[16px] font-semibold text-ink-950">Nenhum dado carregado ainda</h2>
+            <p className="max-w-md text-[13px] text-ink-600">
               Envie primeiro a planilha de preços da Martins e depois a planilha de um concorrente para começar a
               comparar preços.
             </p>
             <button
               onClick={() => setUploadOpen(true)}
-              className="mt-1 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-dark"
+              className="mt-1 rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-dark"
             >
               Enviar primeira planilha
             </button>
@@ -191,27 +202,28 @@ export function Dashboard() {
 
         <KpiCards stats={stats} loading={statsLoading} />
 
-        {stats && <InsightsPanel stats={stats} industries={industries} />}
+        {stats && <ExecutiveSummary stats={stats} industries={industries} categories={categories} />}
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-          <div className="lg:col-span-2">{stats && <StatusDistributionChart data={stats.statusDistribution} />}</div>
-          <div className="lg:col-span-3">{stats && <TopDisadvantageChart data={stats.topDisadvantage} />}</div>
+        {stats && (
+          <PriorityActions
+            competitive={stats.competitive}
+            disadvantage={stats.disadvantage}
+            industry={industries[0]}
+            categories={categories}
+          />
+        )}
+
+        <PriorityVendorCard industry={industries[0]} />
+
+        <div className="rounded-xl bg-white p-4 shadow-card">
+          <h3 className="text-[16px] font-semibold text-ink-950">Análise por Categoria</h3>
+          <p className="mt-0.5 text-[12px] text-ink-500">Da pior para a melhor competitividade</p>
+          <div className="mt-3">
+            <CategoryTable categories={categories} />
+          </div>
         </div>
 
-        <IndustriesTable industries={industries} hasCadger={hasCadger} />
-
-        <Link
-          href="/analise"
-          className="flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-card transition hover:shadow-md"
-        >
-          <div className="flex items-center gap-2">
-            <ClipboardList size={16} className="text-accent" />
-            <span className="text-xs font-medium text-ink-950">
-              Ver análise de competitividade e pedido de apoio a Compras
-            </span>
-          </div>
-          <ChevronRight size={14} className="text-accent" />
-        </Link>
+        {stats && <TopDisadvantageChart data={stats.topDisadvantage} />}
 
         <Filters
           search={search}
