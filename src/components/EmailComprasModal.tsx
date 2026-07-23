@@ -1,28 +1,37 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { X, Copy, Check, Mail } from "lucide-react";
+import { CategoryRow, IndustryRow } from "@/lib/types";
+import { buildComprasEmail } from "@/lib/emailBuilder";
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  subject: string;
-  body: string;
+  categories: CategoryRow[];
+  industry: IndustryRow | undefined;
 }
 
-export function EmailComprasModal({ open, onClose, subject, body }: Props) {
+export function EmailComprasModal({ open, onClose, categories, industry }: Props) {
   const [copied, setCopied] = useState(false);
+  const [buyerName, setBuyerName] = useState("");
+  const [state, setState] = useState("Rio de Janeiro");
+
+  const email = useMemo(
+    () => buildComprasEmail(categories, industry, buyerName, state),
+    [categories, industry, buyerName, state]
+  );
 
   if (!open) return null;
 
   async function handleCopy() {
-    await navigator.clipboard.writeText("Assunto: " + subject + "\n\n" + body);
+    await navigator.clipboard.writeText("Assunto: " + email.subject + "\n\n" + email.body);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
 
   function handleOpenEmail() {
-    const mailtoHref = "mailto:?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
+    const mailtoHref = "mailto:?subject=" + encodeURIComponent(email.subject) + "&body=" + encodeURIComponent(email.body);
     window.location.href = mailtoHref;
   }
 
@@ -36,16 +45,37 @@ export function EmailComprasModal({ open, onClose, subject, body }: Props) {
           </button>
         </div>
 
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <div>
+            <label className="text-[12px] font-medium text-ink-500">Nome do comprador</label>
+            <input
+              value={buyerName}
+              onChange={(e) => setBuyerName(e.target.value)}
+              placeholder="Ex: João"
+              className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-[13px] outline-none focus:border-accent"
+            />
+          </div>
+          <div>
+            <label className="text-[12px] font-medium text-ink-500">Estado</label>
+            <input
+              value={state}
+              onChange={(e) => setState(e.target.value)}
+              placeholder="Ex: Rio de Janeiro"
+              className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-[13px] outline-none focus:border-accent"
+            />
+          </div>
+        </div>
+
         <label className="mt-3 block text-[12px] font-medium text-ink-500">Assunto</label>
         <div className="mt-1 rounded-lg border border-line bg-surface px-3 py-2 text-[13px] text-ink-800">
-          {subject}
+          {email.subject}
         </div>
 
         <label className="mt-3 block text-[12px] font-medium text-ink-500">Corpo do e-mail</label>
         <textarea
           readOnly
-          value={body}
-          rows={12}
+          value={email.body}
+          rows={14}
           className="mt-1 w-full rounded-lg border border-line bg-surface px-3 py-2 text-[13px] leading-relaxed text-ink-800"
         />
 
