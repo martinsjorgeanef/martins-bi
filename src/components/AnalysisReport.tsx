@@ -74,4 +74,91 @@ export function AnalysisReport() {
         <section className="mb-4 rounded-xl bg-white p-5 shadow-card">
           <h2 className="text-[16px] font-semibold text-ink-950">Situacao Geral</h2>
           <p className="mt-2 text-[13px] leading-relaxed text-ink-700">
-            Concluimos a analise de competitividade dos precos da Martins em comparacao com os
+            Concluimos a analise de competitividade dos precos da Martins em comparacao com os principais
+            concorrentes. Atualmente estamos competitivos em <strong>{pctCompetitive}%</strong> dos produtos
+            monitorados. Entretanto, <strong>{pctDisadvantage}%</strong> dos itens permanecem acima do mercado,
+            representando oportunidades importantes para negociacao junto aos fornecedores.
+          </p>
+        </section>
+
+        {priorityCategories.length > 0 || priorityIndustries.length > 0 ? (
+          <section className="mb-4 rounded-xl bg-white p-5 shadow-card">
+            <h2 className="text-[16px] font-semibold text-ink-950">Principais oportunidades</h2>
+            {priorityCategories.length > 0 ? (
+              <div>
+                <p className="mt-2 text-[13px] leading-relaxed text-ink-700">
+                  A analise identificou que as maiores oportunidades concentram-se nas seguintes categorias:
+                </p>
+                <ul className="mt-1.5 list-disc pl-5 text-[13px] leading-relaxed text-ink-800">
+                  {priorityCategories.map(function (c) {
+                    return <li key={c.category}>{c.category}</li>;
+                  })}
+                </ul>
+              </div>
+            ) : null}
+            {priorityIndustries.length > 0 ? (
+              <p className="mt-2 text-[13px] leading-relaxed text-ink-700">
+                Alem disso, a industria <strong>{priorityIndustries[0].fornecedor}</strong> concentra o maior numero
+                de itens em desvantagem.
+              </p>
+            ) : null}
+          </section>
+        ) : null}
+
+        <section className="mb-4 rounded-xl bg-white p-5 shadow-card">
+          <h2 className="text-[16px] font-semibold text-ink-950">Recomendacoes para Compras</h2>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-[13px] leading-relaxed text-ink-800">
+            <li>Priorizar a negociacao dos itens classificados como Em Desvantagem.</li>
+            <li>Concentrar esforcos nas categorias com menor indice de competitividade.</li>
+            <li>Revisar fornecedores que concentram maior quantidade de itens acima do mercado.</li>
+            <li>Avaliar oportunidades de ampliacao do mix nas categorias em que os concorrentes possuem maior cobertura.</li>
+            <li>Acompanhar periodicamente a evolucao da competitividade apos cada negociacao.</li>
+          </ul>
+        </section>
+
+        <section className="mb-4 rounded-xl bg-white p-5 shadow-card">
+          <h2 className="text-[16px] font-semibold text-ink-950">Visao Geral</h2>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div>
+              <div className="text-[20px] font-bold text-ink-950">{stats.matchedProducts}</div>
+              <div className="text-[12px] text-ink-500">Monitorados</div>
+            </div>
+            <div>
+              <div className="text-[20px] font-bold text-good">{stats.competitive}</div>
+              <div className="text-[12px] text-ink-500">Competitivos</div>
+            </div>
+            <div>
+              <div className="text-[20px] font-bold text-warn">{stats.attention}</div>
+              <div className="text-[12px] text-ink-500">Negociacao</div>
+            </div>
+            <div>
+              <div className="text-[20px] font-bold text-bad">{stats.disadvantage}</div>
+              <div className="text-[12px] text-ink-500">Desvantagem</div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-4 rounded-xl bg-white p-5 shadow-card">
+          <h2 className="text-[16px] font-semibold text-ink-950">Analise por Categoria</h2>
+          <div className="mt-3">
+            <CategoryAnalysis categories={categories} />
+          </div>
+        </section>
+
+        <section className="rounded-xl bg-white p-5 shadow-card">
+          <h2 className="text-[16px] font-semibold text-ink-950">Analise por Industria</h2>
+          <div className="mt-3">
+            <IndustryAnalysis industries={industries} />
+          </div>
+        </section>
+      </main>
+
+      <EmailComprasModal
+        open={emailOpen}
+        onClose={function () { setEmailOpen(false); }}
+        categories={categories}
+        industry={industriaAtiva}
+      />
+    </div>
+  );
+}
