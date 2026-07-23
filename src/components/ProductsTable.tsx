@@ -60,7 +60,7 @@ function SortHeader({
       onClick={function () { onSort(field); }}
       style={sticky ? { position: "sticky", left: 0, background: HEADER_BG, zIndex: 2 } : undefined}
       className={clsx(
-        "cursor-pointer select-none whitespace-nowrap px-3 py-3 text-[16px] font-semibold hover:opacity-80",
+        "cursor-pointer select-none whitespace-nowrap px-3 py-3 hover:opacity-80",
         align === "right" && "text-right",
         align === "center" && "text-center"
       )}
@@ -180,11 +180,9 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
                         <StatusBadge status={r.status} />
                         {r.simulatedStatus && r.simulatedStatus !== r.status ? (
                           <div className="mt-0.5 text-[10px] font-medium text-good">
-                            → {r.simulatedStatus === "COMPETITIVO" ? "Competitivo" : "Negociacao pontual"} com desconto
+                            seta {r.simulatedStatus === "COMPETITIVO" ? "Competitivo" : "Negociacao pontual"} com desconto
                           </div>
                         ) : null}
-                      </td>
-                        <StatusBadge status={r.status} />
                       </td>
                     </tr>
                   );
