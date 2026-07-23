@@ -25,7 +25,7 @@ export async function GET() {
 
   for (const p of products) {
     if (p.category) categoriesSet.add(p.category);
-    if (p.supplier) suppliersSet.add(p.supplier);
+    if (p.supplier && p.competitorPrices.length > 0) suppliersSet.add(p.supplier);
     for (const c of p.competitorPrices) competitorsSet.add(c.competitorName);
 
     if (p.competitorPrices.length === 0) continue;
