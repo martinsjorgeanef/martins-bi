@@ -40,9 +40,38 @@ export function AnalysisReport() {
   if (loading || !stats) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-8">
-        <p className="text-[13px] text-ink-600">Carregando análise...</p>
+        <p className="text-[13px] text-ink-600">Carregando analise...</p>
       </div>
     );
   }
 
-  const pctCompetitive = stats.matchedProducts > 0 ?
+  const pctCompetitive = stats.matchedProducts > 0 ? Math.round((stats.competitive / stats.matchedProducts) * 100) : 0;
+  const pctDisadvantage = stats.matchedProducts > 0 ? Math.round((stats.disadvantage / stats.matchedProducts) * 100) : 0;
+
+  const priorityCategories = categories.filter(function (c) { return c.priority !== "Baixa"; }).slice(0, 3);
+  const priorityIndustries = industries.filter(function (i) { return i.priority !== "Baixa"; }).slice(0, 3);
+  const industriaAtiva = industries[0];
+
+  return (
+    <div className="min-h-screen bg-surface">
+      <header className="border-b border-line bg-ink-950 px-4 py-3">
+        <div className="mx-auto flex max-w-3xl items-center justify-between gap-2">
+          <Link href="/" className="flex items-center gap-1.5 text-[13px] text-white/70 hover:text-white">
+            <ArrowLeft size={14} />
+            Voltar ao painel
+          </Link>
+          <button
+            onClick={function () { setEmailOpen(true); }}
+            className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-accent-dark"
+          >
+            <Mail size={13} />
+            Gerar e-mail para Compras
+          </button>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-3xl px-4 py-6">
+        <section className="mb-4 rounded-xl bg-white p-5 shadow-card">
+          <h2 className="text-[16px] font-semibold text-ink-950">Situacao Geral</h2>
+          <p className="mt-2 text-[13px] leading-relaxed text-ink-700">
+            Concluimos a analise de competitividade dos precos da Martins em comparacao com os
