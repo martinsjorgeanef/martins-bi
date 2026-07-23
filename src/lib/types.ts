@@ -39,6 +39,7 @@ export interface IndustryRow {
   disadvantage: number;
   priority: "Alta" | "Média" | "Baixa";
   summary: string;
+  categoriesAffected: string[];
 }
 
 export interface CategoryRow {
