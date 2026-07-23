@@ -21,7 +21,13 @@ export async function GET() {
   let disadvantage = 0;
   let diffSum = 0;
 
-  const matchedItems: { ean: string; description: string; diffPct: number; category: string | null; martinsPrice: number }[] = [];
+  const matchedItems: {
+    ean: string;
+    description: string;
+    diffPct: number;
+    category: string | null;
+    martinsPrice: number;
+  }[] = [];
 
   for (const p of products) {
     const hasCompetitorData = p.competitorPrices.length > 0;
@@ -35,7 +41,9 @@ export async function GET() {
     if (!hasCompetitorData) continue;
     matched++;
 
-    const best = p.competitorPrices.reduce(function (min, c) { return c.price < min.price ? c : min; });
+    const best = p.competitorPrices.reduce(function (min, c) {
+      return c.price < min.price ? c : min;
+    });
     const diffPct = calcDiffPct(p.martinsPrice, best.price);
     const status = calcStatus(diffPct, thresholdFraction);
     diffSum += diffPct;
@@ -44,53 +52,23 @@ export async function GET() {
     else if (status === "ATENCAO") attention++;
     else disadvantage++;
 
-    matchedItems.push({ ean: p.ean, description: p.description, diffPct: diffPct, category: p.category, martinsPrice: p.martinsPrice });
+    matchedItems.push({
+      ean: p.ean,
+      description: p.description,
+      diffPct: diffPct,
+      category: p.category,
+      martinsPrice: p.martinsPrice
+    });
   }
 
-  const worstSorted = matchedItems.slice().sort(function (a, b) { return a.diffPct - b.diffPct; });
-  const bestSorted = matchedItems.slice().sort(function (a, b) { return b.diffPct - a.diffPct; });
+  const worstSorted = matchedItems.slice().sort(function (a, b) {
+    return a.diffPct - b.diffPct;
+  });
+  const bestSorted = matchedItems.slice().sort(function (a, b) {
+    return b.diffPct - a.diffPct;
+  });
 
   const top20Worst = worstSorted.slice(0, 20);
   const top10Best = bestSorted.slice(0, 10);
 
-  const allEans = top20Worst.map(function (w) { return w.ean; }).concat(top10Best.map(function (w) { return w.ean; }));
-  const cadgerMatches = await prisma.cadgerItem.findMany({
-    where: { ean: { in: allEans } },
-    select: { ean: true, description: true }
-  });
-  const longDescByEan = new Map(cadgerMatches.map(function (c) { return [c.ean, c.description]; }));
-
-  return NextResponse.json({
-    totalProducts: matched,
-    matchedProducts: matched,
-    competitive: competitive,
-    attention: attention,
-    disadvantage: disadvantage,
-    avgDiffPct: matched > 0 ? diffSum / matched : null,
-    categories: Array.from(categoriesSet).sort(),
-    competitorNames: Array.from(competitorsSet).sort(),
-    supplierNames: Array.from(suppliersSet).sort(),
-    thresholdPct: settings?.thresholdPct ?? 5,
-    statusDistribution: [
-      { name: "Competitivo", value: competitive, key: "COMPETITIVO" },
-      { name: "Negociação pontual", value: attention, key: "ATENCAO" },
-      { name: "Desvantagem", value: disadvantage, key: "DESVANTAGEM" }
-    ],
-    topDisadvantage: top20Worst.map(function (w) {
-      return {
-        ean: w.ean,
-        description: longDescByEan.get(w.ean) || w.description,
-        category: w.category,
-        diffPct: Math.round(w.diffPct * 1000) / 10
-      };
-    }),
-    topAdvantage: top10Best.map(function (w) {
-      return {
-        ean: w.ean,
-        description: longDescByEan.get(w.ean) || w.description,
-        category: w.category,
-        diffPct: Math.round(w.diffPct * 1000) / 10,
-        martinsPrice: w.martinsPrice
-      };
-    })
-}
+  const allEans = top20Worst
