@@ -26,7 +26,6 @@ export async function GET() {
   for (const p of products) {
     const hasCompetitorData = p.competitorPrices.length > 0;
 
-    // Categorias e fornecedores no filtro só contam quem tem comparação de concorrente ativa agora
     if (hasCompetitorData) {
       if (p.category) categoriesSet.add(p.category);
       if (p.supplier) suppliersSet.add(p.supplier);
@@ -50,6 +49,14 @@ export async function GET() {
 
   worst.sort((a, b) => a.diffPct - b.diffPct);
 
+  const top10 = worst.slice(0, 10);
+  const top10Eans = top10.map((w) => w.ean);
+  const cadgerMatches = await prisma.cadgerItem.findMany({
+    where: { ean: { in: top10Eans } },
+    select: { ean: true, description: true }
+  });
+  const longDescByEan = new Map(cadgerMatches.map((c) => [c.ean, c.description]));
+
   return NextResponse.json({
     totalProducts: matched,
     matchedProducts: matched,
@@ -66,9 +73,10 @@ export async function GET() {
       { name: "Negociação pontual", value: attention, key: "ATENCAO" },
       { name: "Desvantagem", value: disadvantage, key: "DESVANTAGEM" }
     ],
-    topDisadvantage: worst.slice(0, 10).map((w) => ({
+    topDisadvantage: top10.map((w) => ({
       ean: w.ean,
-      description: w.description.length > 18 ? w.description.slice(0, 18) + "…" : w.description,
+      description: longDescByEan.get(w.ean) || w.description,
+      category: w.category,
       diffPct: Math.round(w.diffPct * 1000) / 10
     }))
   });
