@@ -37,17 +37,17 @@ export function buildVendasMessage(items: DisadvantageItem[], industryName: stri
 
     if (cleaned.linha) {
       if (!byCategory.has(category)) byCategory.set(category, new Map());
-      var brandMap = byCategory.get(category) as Map<string, Map<string, FlatItem[]>>;
-      if (!brandMap.has(cleaned.brand)) brandMap.set(cleaned.brand, new Map());
-      var lineMap = brandMap.get(cleaned.brand) as Map<string, FlatItem[]>;
-      if (!lineMap.has(cleaned.linha)) lineMap.set(cleaned.linha, []);
-      (lineMap.get(cleaned.linha) as FlatItem[]).push({ label: label, price: it.martinsPrice });
+      var brandMapBuild = byCategory.get(category) as Map<string, Map<string, FlatItem[]>>;
+      if (!brandMapBuild.has(cleaned.brand)) brandMapBuild.set(cleaned.brand, new Map());
+      var lineMapBuild = brandMapBuild.get(cleaned.brand) as Map<string, FlatItem[]>;
+      if (!lineMapBuild.has(cleaned.linha)) lineMapBuild.set(cleaned.linha, []);
+      (lineMapBuild.get(cleaned.linha) as FlatItem[]).push({ label: label, price: it.martinsPrice });
     } else {
       if (!byCategoryFlat.has(category)) byCategoryFlat.set(category, new Map());
-      var flatBrandMap = byCategoryFlat.get(category) as Map<string, FlatItem[]>;
-      if (!flatBrandMap.has(cleaned.brand)) flatBrandMap.set(cleaned.brand, []);
+      var flatBrandMapBuild = byCategoryFlat.get(category) as Map<string, FlatItem[]>;
+      if (!flatBrandMapBuild.has(cleaned.brand)) flatBrandMapBuild.set(cleaned.brand, []);
       var flatLabel = cleaned.tipo ? cleaned.tipo + " " + label : label;
-      (flatBrandMap.get(cleaned.brand) as FlatItem[]).push({ label: flatLabel, price: it.martinsPrice });
+      (flatBrandMapBuild.get(cleaned.brand) as FlatItem[]).push({ label: flatLabel, price: it.martinsPrice });
     }
   });
 
@@ -72,9 +72,10 @@ export function buildVendasMessage(items: DisadvantageItem[], industryName: stri
 
     var brandMap = byCategory.get(category);
     if (brandMap) {
-      var brandNames = Array.from(brandMap.keys()).sort();
+      var safeBrandMap = brandMap as Map<string, Map<string, FlatItem[]>>;
+      var brandNames = Array.from(safeBrandMap.keys()).sort();
       brandNames.forEach(function (brand) {
-        var lineMap = brandMap.get(brand) as Map<string, FlatItem[]>;
+        var lineMap = safeBrandMap.get(brand) as Map<string, FlatItem[]>;
         lines.push(brand.toUpperCase());
         var lineNames = Array.from(lineMap.keys()).sort();
         lineNames.forEach(function (lineName) {
@@ -91,10 +92,11 @@ export function buildVendasMessage(items: DisadvantageItem[], industryName: stri
 
     var flatBrandMap = byCategoryFlat.get(category);
     if (flatBrandMap) {
-      var flatBrandNames = Array.from(flatBrandMap.keys()).sort();
+      var safeFlatBrandMap = flatBrandMap as Map<string, FlatItem[]>;
+      var flatBrandNames = Array.from(safeFlatBrandMap.keys()).sort();
       flatBrandNames.forEach(function (brand) {
         lines.push(brand.toUpperCase());
-        var arr = flatBrandMap.get(brand) as FlatItem[];
+        var arr = safeFlatBrandMap.get(brand) as FlatItem[];
         arr.forEach(function (it) {
           var priceText = it.price !== undefined ? money(it.price) : "-";
           lines.push("• " + it.label + " " + priceText);
