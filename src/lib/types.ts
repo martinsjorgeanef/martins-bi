@@ -51,4 +51,5 @@ export interface CategoryRow {
   competitivePct: number;
   priority: "Alta" | "Média" | "Baixa";
   summary: string;
+  avgDisadvantagePct: number | null;
 }
