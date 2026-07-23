@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { KpiCards } from "./KpiCards";
 import { StatusDistributionChart, TopDisadvantageChart } from "./Charts";
+import { InsightsPanel } from "./InsightsPanel";
 import { Filters } from "./Filters";
 import { ProductsTable } from "./ProductsTable";
 import { IndustriesTable } from "./IndustriesTable";
@@ -15,7 +16,7 @@ import { UploadCloud, BarChart3, ClipboardList, ChevronRight } from "lucide-reac
 interface StatsResponse extends DashboardStats {
   thresholdPct: number;
   statusDistribution: { name: string; value: number; key: string }[];
-  topDisadvantage: { ean: string; description: string; diffPct: number }[];
+  topDisadvantage: { ean: string; description: string; diffPct: number; martinsPrice: number; marketPrice: number }[];
 }
 
 export function Dashboard() {
@@ -148,7 +149,7 @@ export function Dashboard() {
   return (
     <div className="min-h-screen bg-surface">
       <header className="sticky top-0 z-30 border-b border-line bg-ink-950">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 lg:px-6">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 lg:px-6">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
               <BarChart3 size={18} className="text-white" />
@@ -170,13 +171,13 @@ export function Dashboard() {
         </div>
       </header>
 
-      <main className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 lg:px-6">
-        {!statsLoading && stats && stats.totalProducts === 0 && (
-          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-line bg-white p-10 text-center">
+      <main className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-6 lg:px-6">
+        {!statsLoading && stats && stats.matchedProducts === 0 && (
+          <div className="flex flex-col items-center gap-3 rounded-xl bg-white p-10 text-center shadow-card">
             <UploadCloud size={28} className="text-accent" />
             <h2 className="font-display text-base font-semibold text-ink-950">Nenhum dado carregado ainda</h2>
             <p className="max-w-md text-sm text-ink-600">
-              Envie primeiro a planilha de preços da Martins e depois a(s) planilha(s) de concorrentes para começar a
+              Envie primeiro a planilha de preços da Martins e depois a planilha de um concorrente para começar a
               comparar preços.
             </p>
             <button
@@ -190,9 +191,18 @@ export function Dashboard() {
 
         <KpiCards stats={stats} loading={statsLoading} />
 
+        {stats && <InsightsPanel stats={stats} industries={industries} />}
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+          <div className="lg:col-span-2">{stats && <StatusDistributionChart data={stats.statusDistribution} />}</div>
+          <div className="lg:col-span-3">{stats && <TopDisadvantageChart data={stats.topDisadvantage} />}</div>
+        </div>
+
+        <IndustriesTable industries={industries} hasCadger={hasCadger} />
+
         <Link
           href="/analise"
-          className="flex items-center justify-between rounded-lg border border-accent/30 bg-accent/5 px-3 py-2.5 transition hover:bg-accent/10"
+          className="flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-card transition hover:shadow-md"
         >
           <div className="flex items-center gap-2">
             <ClipboardList size={16} className="text-accent" />
@@ -202,17 +212,6 @@ export function Dashboard() {
           </div>
           <ChevronRight size={14} className="text-accent" />
         </Link>
-
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-          <div className="lg:col-span-2">
-            {stats && <StatusDistributionChart data={stats.statusDistribution} />}
-          </div>
-          <div className="lg:col-span-3">
-            {stats && <TopDisadvantageChart data={stats.topDisadvantage} />}
-          </div>
-        </div>
-
-        <IndustriesTable industries={industries} hasCadger={hasCadger} />
 
         <Filters
           search={search}
