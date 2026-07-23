@@ -16,12 +16,12 @@ export function EmailComprasModal({ open, onClose, subject, body }: Props) {
   if (!open) return null;
 
   async function handleCopy() {
-    await navigator.clipboard.writeText(`Assunto: ${subject}\n\n${body}`);
+    await navigator.clipboard.writeText("Assunto: " + subject + "\n\n" + body);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
 
-  const mailtoHref = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  const mailtoHref = "mailto:?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/40 p-4">
