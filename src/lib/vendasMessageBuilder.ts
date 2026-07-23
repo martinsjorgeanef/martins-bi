@@ -2,7 +2,7 @@ import { DisadvantageItem } from "@/components/Charts";
 import { cleanProductName } from "./productNameCleaner";
 
 function money(v: number) {
-  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) + " Un.";
 }
 
 var CATEGORY_EMOJI: Record<string, string> = {
@@ -18,64 +18,93 @@ function emojiFor(category: string): string {
   return CATEGORY_EMOJI[key] || "🛍️";
 }
 
-interface VariantLine {
-  weight: string | null;
+interface FlatItem {
+  label: string;
   price: number | undefined;
 }
 
-export function buildVendasMessage(items: DisadvantageItem[]) {
+export function buildVendasMessage(items: DisadvantageItem[], industryName: string | null) {
   var subject = "Oportunidades Comerciais - Vantagem Competitiva Martins";
 
-  var byCategory = new Map<string, Map<string, Map<string, VariantLine[]>>>();
+  var byCategory = new Map<string, Map<string, Map<string, FlatItem[]>>>();
+  var byCategoryFlat = new Map<string, Map<string, FlatItem[]>>();
 
   items.forEach(function (it) {
     var category = it.category ? it.category : "Sem categoria";
     var cleaned = cleanProductName(it.description);
+    var line = cleaned.weight ? cleaned.descriptor + " " + cleaned.weight : cleaned.descriptor;
+    var label = line.trim().length > 0 ? line.trim() : cleaned.weight || "";
 
-    if (!byCategory.has(category)) byCategory.set(category, new Map());
-    var brandMap = byCategory.get(category) as Map<string, Map<string, VariantLine[]>>;
-
-    if (!brandMap.has(cleaned.brand)) brandMap.set(cleaned.brand, new Map());
-    var itemMap = brandMap.get(cleaned.brand) as Map<string, VariantLine[]>;
-
-    if (!itemMap.has(cleaned.itemName)) itemMap.set(cleaned.itemName, []);
-    var arr = itemMap.get(cleaned.itemName) as VariantLine[];
-    arr.push({ weight: cleaned.weight, price: it.martinsPrice });
+    if (cleaned.linha) {
+      if (!byCategory.has(category)) byCategory.set(category, new Map());
+      var brandMap = byCategory.get(category) as Map<string, Map<string, FlatItem[]>>;
+      if (!brandMap.has(cleaned.brand)) brandMap.set(cleaned.brand, new Map());
+      var lineMap = brandMap.get(cleaned.brand) as Map<string, FlatItem[]>;
+      if (!lineMap.has(cleaned.linha)) lineMap.set(cleaned.linha, []);
+      (lineMap.get(cleaned.linha) as FlatItem[]).push({ label: label, price: it.martinsPrice });
+    } else {
+      if (!byCategoryFlat.has(category)) byCategoryFlat.set(category, new Map());
+      var flatBrandMap = byCategoryFlat.get(category) as Map<string, FlatItem[]>;
+      if (!flatBrandMap.has(cleaned.brand)) flatBrandMap.set(cleaned.brand, []);
+      var flatLabel = cleaned.tipo ? cleaned.tipo + " " + label : label;
+      (flatBrandMap.get(cleaned.brand) as FlatItem[]).push({ label: flatLabel, price: it.martinsPrice });
+    }
   });
 
-  var categoryNames = Array.from(byCategory.keys()).sort();
+  var allCategoryNames = new Set<string>();
+  Array.from(byCategory.keys()).forEach(function (c) { allCategoryNames.add(c); });
+  Array.from(byCategoryFlat.keys()).forEach(function (c) { allCategoryNames.add(c); });
+  var categoryNames = Array.from(allCategoryNames).sort();
 
   var lines: string[] = [];
   lines.push("🔥 OPORTUNIDADES DO DIA 🔥");
+  if (industryName) {
+    lines.push("🏭 INDUSTRIA: " + industryName.toUpperCase());
+  }
   lines.push("");
   lines.push("✅ Nota RJ");
   lines.push("✅ Prazo 45D");
   lines.push("");
 
   categoryNames.forEach(function (category) {
-    var brandMap = byCategory.get(category) as Map<string, Map<string, VariantLine[]>>;
     lines.push(emojiFor(category) + " " + category.toUpperCase());
     lines.push("");
 
-    var brandNames = Array.from(brandMap.keys()).sort();
-    brandNames.forEach(function (brand) {
-      var itemMap = brandMap.get(brand) as Map<string, VariantLine[]>;
-      lines.push(brand.toUpperCase());
-
-      var itemNames = Array.from(itemMap.keys()).sort();
-      itemNames.forEach(function (itemName) {
-        var variants = itemMap.get(itemName) as VariantLine[];
-        variants.forEach(function (v) {
-          var priceText = v.price !== undefined ? money(v.price) : "-";
-          var label = v.weight ? itemName + " " + v.weight : itemName;
-          lines.push("• " + label + " | " + priceText);
+    var brandMap = byCategory.get(category);
+    if (brandMap) {
+      var brandNames = Array.from(brandMap.keys()).sort();
+      brandNames.forEach(function (brand) {
+        var lineMap = brandMap.get(brand) as Map<string, FlatItem[]>;
+        lines.push(brand.toUpperCase());
+        var lineNames = Array.from(lineMap.keys()).sort();
+        lineNames.forEach(function (lineName) {
+          lines.push(lineName.toUpperCase());
+          var arr = lineMap.get(lineName) as FlatItem[];
+          arr.forEach(function (it) {
+            var priceText = it.price !== undefined ? money(it.price) : "-";
+            lines.push("• " + it.label + " " + priceText);
+          });
         });
+        lines.push("");
       });
-      lines.push("");
-    });
+    }
+
+    var flatBrandMap = byCategoryFlat.get(category);
+    if (flatBrandMap) {
+      var flatBrandNames = Array.from(flatBrandMap.keys()).sort();
+      flatBrandNames.forEach(function (brand) {
+        lines.push(brand.toUpperCase());
+        var arr = flatBrandMap.get(brand) as FlatItem[];
+        arr.forEach(function (it) {
+          var priceText = it.price !== undefined ? money(it.price) : "-";
+          lines.push("• " + it.label + " " + priceText);
+        });
+        lines.push("");
+      });
+    }
   });
 
-  lines.push("Bora pracima e boas vendas!");
+  lines.push("Bom trabalho e boas vendas!");
 
   return { subject: subject, body: lines.join("\n") };
 }
