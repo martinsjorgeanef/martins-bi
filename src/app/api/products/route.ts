@@ -23,10 +23,9 @@ function buildRow(
   },
   thresholdFraction: number
 ): ProductRow {
-  const competitors = product.competitorPrices.map((c) => ({
-    name: c.competitorName,
-    price: c.price
-  }));
+  const competitors = product.competitorPrices.map(function (c) {
+    return { name: c.competitorName, price: c.price };
+  });
 
   if (competitors.length === 0) {
     return {
@@ -40,16 +39,18 @@ function buildRow(
       bestCompetitor: null,
       diffPct: null,
       status: "SEM_DADOS",
-      competitors,
+      competitors: competitors,
       martinsUpdatedAt: product.martinsUpdatedAt.toISOString()
     };
   }
 
-  const best = competitors.reduce((min, c) => (c.price < min.price ? c : min));
+  const best = competitors.reduce(function (min, c) {
+    return c.price < min.price ? c : min;
+  });
   const diffPct = calcDiffPct(product.martinsPrice, best.price);
   const status = calcStatus(diffPct, thresholdFraction);
 
-  return {
+  const row: ProductRow = {
     id: product.id,
     ean: product.ean,
     description: product.description,
@@ -58,11 +59,24 @@ function buildRow(
     martinsPrice: product.martinsPrice,
     marketPrice: best.price,
     bestCompetitor: best.name,
-    diffPct,
-    status,
-    competitors,
+    diffPct: diffPct,
+    status: status,
+    competitors: competitors,
     martinsUpdatedAt: product.martinsUpdatedAt.toISOString()
   };
+
+  // Simulacao de negociacao: so faz sentido para itens hoje em desvantagem.
+  // Aplica a reducao de preco (mesmo % do "Limite Negociacao") e ve se o item passaria
+  // a competitivo ou negociacao pontual.
+  if (status === "DESVANTAGEM" && thresholdFraction > 0) {
+    const simulatedPrice = product.martinsPrice * (1 - thresholdFraction);
+    const simulatedDiffPct = calcDiffPct(simulatedPrice, best.price);
+    const simulatedStatus = calcStatus(simulatedDiffPct, thresholdFraction);
+    row.simulatedStatus = simulatedStatus;
+    row.simulatedDiffPct = simulatedDiffPct;
+  }
+
+  return row;
 }
 
 export async function GET(req: NextRequest) {
@@ -84,33 +98,43 @@ export async function GET(req: NextRequest) {
     orderBy: { description: "asc" }
   });
 
-  let rows = products.map((p) => buildRow(p, thresholdFraction));
+  let rows = products.map(function (p) {
+    return buildRow(p, thresholdFraction);
+  });
 
-  // Por padrão, mostra só produtos com comparação de concorrente ativa (indústria em análise agora).
-  // Só mostra "Sem dados de mercado" se o usuário pedir isso explicitamente no filtro de Status.
   if (status !== "SEM_DADOS") {
-    rows = rows.filter((r) => r.status !== "SEM_DADOS");
+    rows = rows.filter(function (r) {
+      return r.status !== "SEM_DADOS";
+    });
   }
 
   if (search) {
-    rows = rows.filter(
-      (r) => r.ean.includes(search) || r.description.toLowerCase().includes(search)
-    );
+    rows = rows.filter(function (r) {
+      return r.ean.includes(search) || r.description.toLowerCase().includes(search);
+    });
   }
   if (category) {
-    rows = rows.filter((r) => r.category === category);
+    rows = rows.filter(function (r) {
+      return r.category === category;
+    });
   }
   if (status) {
-    rows = rows.filter((r) => r.status === status);
+    rows = rows.filter(function (r) {
+      return r.status === status;
+    });
   }
   if (competitor) {
-    rows = rows.filter((r) => r.competitors.some((c) => c.name === competitor));
+    rows = rows.filter(function (r) {
+      return r.competitors.some(function (c) { return c.name === competitor; });
+    });
   }
   if (supplier) {
-    rows = rows.filter((r) => r.supplier === supplier);
+    rows = rows.filter(function (r) {
+      return r.supplier === supplier;
+    });
   }
 
-  rows.sort((a, b) => {
+  rows.sort(function (a, b) {
     const valA = a[sortBy as keyof ProductRow];
     const valB = b[sortBy as keyof ProductRow];
     if (valA === null || valA === undefined) return 1;
@@ -127,9 +151,9 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     rows: paginated,
-    total,
-    page,
-    pageSize,
+    total: total,
+    page: page,
+    pageSize: pageSize,
     totalPages: Math.max(1, Math.ceil(total / pageSize))
   });
 }
