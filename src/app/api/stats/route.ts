@@ -21,7 +21,7 @@ export async function GET() {
   let disadvantage = 0;
   let diffSum = 0;
 
-  const matchedItems: { ean: string; description: string; diffPct: number; category: string | null }[] = [];
+  const matchedItems: { ean: string; description: string; diffPct: number; category: string | null; martinsPrice: number }[] = [];
 
   for (const p of products) {
     const hasCompetitorData = p.competitorPrices.length > 0;
@@ -44,7 +44,7 @@ export async function GET() {
     else if (status === "ATENCAO") attention++;
     else disadvantage++;
 
-    matchedItems.push({ ean: p.ean, description: p.description, diffPct: diffPct, category: p.category });
+    matchedItems.push({ ean: p.ean, description: p.description, diffPct: diffPct, category: p.category, martinsPrice: p.martinsPrice });
   }
 
   const worstSorted = matchedItems.slice().sort(function (a, b) { return a.diffPct - b.diffPct; });
@@ -89,8 +89,8 @@ export async function GET() {
         ean: w.ean,
         description: longDescByEan.get(w.ean) || w.description,
         category: w.category,
-        diffPct: Math.round(w.diffPct * 1000) / 10
+        diffPct: Math.round(w.diffPct * 1000) / 10,
+        martinsPrice: w.martinsPrice
       };
     })
-  });
 }
