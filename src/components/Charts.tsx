@@ -5,6 +5,7 @@ export interface DisadvantageItem {
   description: string;
   category: string | null;
   diffPct: number;
+  martinsPrice?: number;
 }
 
 export function TopDisadvantageChart({ data }: { data: DisadvantageItem[] }) {
@@ -67,15 +68,20 @@ export function TopAdvantageChart({ data }: { data: DisadvantageItem[] }) {
 
       <div className="mt-2 flex flex-col">
         {top10.map(function (d) {
+          const destaque = d.diffPct > 10;
+          const priceText = d.martinsPrice !== undefined ? d.martinsPrice.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "-";
           return (
             <div key={d.ean} className="border-b border-line/50 py-2 last:border-b-0">
               <div className="text-[9px] font-mono text-[#94A3B8]">{d.ean}</div>
-              <div className="text-[10px] font-medium text-[#1F2937]">{d.description}</div>
+              <div className="flex items-center gap-1 text-[10px] font-medium text-[#1F2937]">
+                {destaque ? <span title="Produto em destaque">⭐</span> : null}
+                {d.description}
+              </div>
               <div className="mt-0.5 flex items-center justify-between gap-2">
                 <span className="text-[9px] text-[#2563EB]">
-                  🏷️ Categoria: {d.category ? d.category : "Sem categoria"}
+                  🏷️ {d.category ? d.category : "Sem categoria"}
                 </span>
-                <span className="shrink-0 text-[12px] font-bold text-[#16A34A]">Vantagem: +{d.diffPct}%</span>
+                <span className="shrink-0 text-[12px] font-bold text-[#16A34A]">{priceText}</span>
               </div>
             </div>
           );
