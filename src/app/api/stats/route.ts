@@ -66,7 +66,7 @@ export async function GET() {
       { name: "Negociação pontual", value: attention, key: "ATENCAO" },
       { name: "Desvantagem", value: disadvantage, key: "DESVANTAGEM" }
     ],
-    topDisadvantage: worst.slice(0, 8).map((w) => ({
+    topDisadvantage: worst.slice(0, 10).map((w) => ({
       ean: w.ean,
       description: w.description.length > 18 ? w.description.slice(0, 18) + "…" : w.description,
       diffPct: Math.round(w.diffPct * 1000) / 10
