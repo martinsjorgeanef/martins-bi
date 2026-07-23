@@ -24,51 +24,68 @@ function emojiFor(category: string): string {
   return CATEGORY_EMOJI[key] || "🛍️";
 }
 
-interface VariantLine {
-  weight: string | null;
+interface FlatItem {
+  label: string;
   price: number | undefined;
 }
 
 export function VendasReport() {
   const [items, setItems] = useState<DisadvantageItem[]>([]);
+  const [industryName, setIndustryName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [messageOpen, setMessageOpen] = useState(false);
 
   useEffect(function () {
-    fetch("/api/stats")
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        setItems(data.topAdvantage || []);
-        setLoading(false);
-      });
+    Promise.all([
+      fetch("/api/stats").then(function (r) { return r.json(); }),
+      fetch("/api/industries").then(function (r) { return r.json(); })
+    ]).then(function (results) {
+      var stats = results[0];
+      var ind = results[1];
+      setItems(stats.topAdvantage || []);
+      var industries = ind.industries || [];
+      setIndustryName(industries.length > 0 ? industries[0].fornecedor : null);
+      setLoading(false);
+    });
   }, []);
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-8">
+      <div className="mx-auto max-w-2xl px-4 py-8">
         <p className="text-[14px] text-ink-600">Carregando...</p>
       </div>
     );
   }
 
-  var byCategory = new Map<string, Map<string, Map<string, VariantLine[]>>>();
+  var byCategory = new Map<string, Map<string, Map<string, FlatItem[]>>>();
+  var byCategoryFlat = new Map<string, Map<string, FlatItem[]>>();
 
   items.forEach(function (it) {
     var category = it.category ? it.category : "Sem categoria";
     var cleaned = cleanProductName(it.description);
+    var line = cleaned.weight ? cleaned.descriptor + " " + cleaned.weight : cleaned.descriptor;
+    var label = line.trim().length > 0 ? line.trim() : cleaned.weight || "";
 
-    if (!byCategory.has(category)) byCategory.set(category, new Map());
-    var brandMap = byCategory.get(category) as Map<string, Map<string, VariantLine[]>>;
-
-    if (!brandMap.has(cleaned.brand)) brandMap.set(cleaned.brand, new Map());
-    var itemMap = brandMap.get(cleaned.brand) as Map<string, VariantLine[]>;
-
-    if (!itemMap.has(cleaned.itemName)) itemMap.set(cleaned.itemName, []);
-    var arr = itemMap.get(cleaned.itemName) as VariantLine[];
-    arr.push({ weight: cleaned.weight, price: it.martinsPrice });
+    if (cleaned.linha) {
+      if (!byCategory.has(category)) byCategory.set(category, new Map());
+      var brandMap = byCategory.get(category) as Map<string, Map<string, FlatItem[]>>;
+      if (!brandMap.has(cleaned.brand)) brandMap.set(cleaned.brand, new Map());
+      var lineMap = brandMap.get(cleaned.brand) as Map<string, FlatItem[]>;
+      if (!lineMap.has(cleaned.linha)) lineMap.set(cleaned.linha, []);
+      (lineMap.get(cleaned.linha) as FlatItem[]).push({ label: label, price: it.martinsPrice });
+    } else {
+      if (!byCategoryFlat.has(category)) byCategoryFlat.set(category, new Map());
+      var flatBrandMap = byCategoryFlat.get(category) as Map<string, FlatItem[]>;
+      if (!flatBrandMap.has(cleaned.brand)) flatBrandMap.set(cleaned.brand, []);
+      var flatLabel = cleaned.tipo ? cleaned.tipo + " " + label : label;
+      (flatBrandMap.get(cleaned.brand) as FlatItem[]).push({ label: flatLabel, price: it.martinsPrice });
+    }
   });
 
-  var categoryNames = Array.from(byCategory.keys()).sort();
+  var allCategoryNames = new Set<string>();
+  Array.from(byCategory.keys()).forEach(function (c) { allCategoryNames.add(c); });
+  Array.from(byCategoryFlat.keys()).forEach(function (c) { allCategoryNames.add(c); });
+  var categoryNames = Array.from(allCategoryNames).sort();
 
   return (
     <div className="min-h-screen bg-surface">
@@ -89,17 +106,20 @@ export function VendasReport() {
       </header>
 
       <main className="mx-auto max-w-2xl px-4 py-6">
-        <h1 className="mb-4 text-[20px] font-bold text-[#1F2937]">🔥 Oportunidades do Dia</h1>
+        <h1 className="text-[20px] font-bold text-[#1F2937]">🔥 Oportunidades do Dia</h1>
+        {industryName ? (
+          <p className="mt-1 text-[13px] font-medium text-[#2563EB]">🏭 Industria: {industryName}</p>
+        ) : null}
 
         {categoryNames.length === 0 ? (
-          <div className="rounded-xl bg-white p-6 text-center shadow-card">
+          <div className="mt-4 rounded-xl bg-white p-6 text-center shadow-card">
             <p className="text-[13px] text-ink-600">Nenhuma oportunidade identificada no momento.</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-4">
+          <div className="mt-4 flex flex-col gap-4">
             {categoryNames.map(function (category) {
-              var brandMap = byCategory.get(category) as Map<string, Map<string, VariantLine[]>>;
-              var brandNames = Array.from(brandMap.keys()).sort();
+              var brandMap = byCategory.get(category);
+              var flatBrandMap = byCategoryFlat.get(category);
 
               return (
                 <div key={category} className="rounded-xl bg-white p-4 shadow-card">
@@ -108,32 +128,64 @@ export function VendasReport() {
                   </h2>
 
                   <div className="mt-3 flex flex-col gap-3">
-                    {brandNames.map(function (brand) {
-                      var itemMap = brandMap.get(brand) as Map<string, VariantLine[]>;
-                      var itemNames = Array.from(itemMap.keys()).sort();
+                    {brandMap
+                      ? Array.from(brandMap.keys())
+                          .sort()
+                          .map(function (brand) {
+                            var lineMap = brandMap.get(brand) as Map<string, FlatItem[]>;
+                            var lineNames = Array.from(lineMap.keys()).sort();
+                            return (
+                              <div key={brand}>
+                                <div className="text-[13px] font-bold uppercase tracking-wide text-[#2563EB]">{brand}</div>
+                                {lineNames.map(function (lineName) {
+                                  var arr = lineMap.get(lineName) as FlatItem[];
+                                  return (
+                                    <div key={lineName} className="mt-1">
+                                      <div className="text-[13px] font-semibold text-[#1F2937]">{lineName}</div>
+                                      <ul className="mt-0.5 space-y-1 pl-1">
+                                        {arr.map(function (it, idx) {
+                                          return (
+                                            <li key={idx} className="flex items-center justify-between gap-2 text-[13px]">
+                                              <span className="text-[#1F2937]">{it.label}</span>
+                                              <span className="font-bold text-[#16A34A]">
+                                                {it.price !== undefined ? money(it.price) + " Un." : "-"}
+                                              </span>
+                                            </li>
+                                          );
+                                        })}
+                                      </ul>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })
+                      : null}
 
-                      return (
-                        <div key={brand}>
-                          <div className="text-[13px] font-bold uppercase tracking-wide text-[#2563EB]">{brand}</div>
-                          <ul className="mt-1 space-y-1 pl-1">
-                            {itemNames.map(function (itemName) {
-                              var variants = itemMap.get(itemName) as VariantLine[];
-                              return variants.map(function (v, idx) {
-                                var label = v.weight ? itemName + " " + v.weight : itemName;
-                                return (
-                                  <li key={itemName + idx} className="flex items-center justify-between gap-2 text-[13px]">
-                                    <span className="text-[#1F2937]">{label}</span>
-                                    <span className="font-bold text-[#16A34A]">
-                                      {v.price !== undefined ? money(v.price) : "-"}
-                                    </span>
-                                  </li>
-                                );
-                              });
-                            })}
-                          </ul>
-                        </div>
-                      );
-                    })}
+                    {flatBrandMap
+                      ? Array.from(flatBrandMap.keys())
+                          .sort()
+                          .map(function (brand) {
+                            var arr = flatBrandMap.get(brand) as FlatItem[];
+                            return (
+                              <div key={brand}>
+                                <div className="text-[13px] font-bold uppercase tracking-wide text-[#2563EB]">{brand}</div>
+                                <ul className="mt-1 space-y-1 pl-1">
+                                  {arr.map(function (it, idx) {
+                                    return (
+                                      <li key={idx} className="flex items-center justify-between gap-2 text-[13px]">
+                                        <span className="text-[#1F2937]">{it.label}</span>
+                                        <span className="font-bold text-[#16A34A]">
+                                          {it.price !== undefined ? money(it.price) + " Un." : "-"}
+                                        </span>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              </div>
+                            );
+                          })
+                      : null}
                   </div>
                 </div>
               );
@@ -142,7 +194,12 @@ export function VendasReport() {
         )}
       </main>
 
-      <SalesMessageModal open={messageOpen} onClose={function () { setMessageOpen(false); }} items={items} />
+      <SalesMessageModal
+        open={messageOpen}
+        onClose={function () { setMessageOpen(false); }}
+        items={items}
+        industryName={industryName}
+      />
     </div>
   );
 }
