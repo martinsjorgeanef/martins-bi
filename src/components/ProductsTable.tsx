@@ -178,6 +178,13 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
                       </td>
                       <td className="whitespace-nowrap px-3 py-2 text-center">
                         <StatusBadge status={r.status} />
+                        {r.simulatedStatus && r.simulatedStatus !== r.status ? (
+                          <div className="mt-0.5 text-[10px] font-medium text-good">
+                            → {r.simulatedStatus === "COMPETITIVO" ? "Competitivo" : "Negociacao pontual"} com desconto
+                          </div>
+                        ) : null}
+                      </td>
+                        <StatusBadge status={r.status} />
                       </td>
                     </tr>
                   );
