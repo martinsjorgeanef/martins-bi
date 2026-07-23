@@ -21,27 +21,15 @@ function money(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function DiffBar({ diffPct }: { diffPct: number | null }) {
-  if (diffPct === null) return <span className="text-[10px] text-ink-500">-</span>;
+function DiffCell({ diffPct }: { diffPct: number | null }) {
+  if (diffPct === null) return <span className="text-[11px] text-ink-500">-</span>;
   const pct = diffPct * 100;
-  const clamped = Math.max(-30, Math.min(30, pct));
-  const widthPct = (Math.abs(clamped) / 30) * 50;
   const positive = pct >= 0;
-
   return (
-    <div className="flex items-center gap-1">
-      <div className="relative h-1 w-10 rounded-full bg-line">
-        <div className="absolute left-1/2 h-full w-px bg-ink-500/30" />
-        <div
-          className={clsx("absolute h-full rounded-full", positive ? "bg-good" : "bg-bad")}
-          style={positive ? { left: "50%", width: widthPct + "%" } : { right: "50%", width: widthPct + "%" }}
-        />
-      </div>
-      <span className={clsx("min-w-[42px] text-right text-[12px] font-semibold tabular-nums", positive ? "text-good" : "text-bad")}>
-        {positive ? "+" : ""}
-        {pct.toFixed(1)}%
-      </span>
-    </div>
+    <span className={clsx("text-[12px] font-semibold tabular-nums", positive ? "text-good" : "text-bad")}>
+      {positive ? "+" : ""}
+      {pct.toFixed(1)}%
+    </span>
   );
 }
 
@@ -58,18 +46,25 @@ function SortHeader({
   sortBy: string;
   sortDir: "asc" | "desc";
   onSort: (f: string) => void;
-  align?: "left" | "right";
+  align?: "left" | "right" | "center";
 }) {
   const active = sortBy === field;
   return (
     <th
       onClick={function () { onSort(field); }}
       className={clsx(
-        "cursor-pointer select-none whitespace-nowrap px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-ink-600 hover:text-ink-950",
-        align === "right" && "text-right"
+        "cursor-pointer select-none whitespace-nowrap px-2 py-1.5 text-[12px] font-semibold uppercase tracking-wide text-ink-600 hover:text-ink-950",
+        align === "right" && "text-right",
+        align === "center" && "text-center"
       )}
     >
-      <span className={clsx("inline-flex items-center gap-1", align === "right" && "flex-row-reverse")}>
+      <span
+        className={clsx(
+          "inline-flex items-center gap-1",
+          align === "right" && "flex-row-reverse",
+          align === "center" && "justify-center"
+        )}
+      >
         {label}
         <ArrowUpDown size={9} className={active ? "text-accent" : "text-ink-500/40"} />
       </span>
@@ -81,26 +76,41 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
   return (
     <div className="rounded-lg border border-line bg-white shadow-card">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1200px] border-collapse">
+        <table className="w-full table-fixed border-collapse">
+          <colgroup>
+            <col style={{ width: "10%" }} />
+            <col style={{ width: "30%" }} />
+            <col style={{ width: "18%" }} />
+            <col style={{ width: "10%" }} />
+            <col style={{ width: "10%" }} />
+            <col style={{ width: "10%" }} />
+            <col style={{ width: "7%" }} />
+            <col style={{ width: "5%" }} />
+          </colgroup>
           <thead className="sticky top-0 border-b border-line bg-surface">
             <tr>
-              <SortHeader label="Fornecedor" field="supplier" sortBy={sortBy} sortDir={sortDir} onSort={onSort} />
               <SortHeader label="EAN" field="ean" sortBy={sortBy} sortDir={sortDir} onSort={onSort} />
               <SortHeader label="Descricao" field="description" sortBy={sortBy} sortDir={sortDir} onSort={onSort} />
-              <th className="whitespace-nowrap px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-ink-600">Categoria</th>
+              <th className="whitespace-nowrap px-2 py-1.5 text-left text-[12px] font-semibold uppercase tracking-wide text-ink-600">
+                Categoria
+              </th>
               <SortHeader label="Preco Martins" field="martinsPrice" sortBy={sortBy} sortDir={sortDir} onSort={onSort} align="right" />
               <SortHeader label="Preco Concorrente" field="marketPrice" sortBy={sortBy} sortDir={sortDir} onSort={onSort} align="right" />
-              <th className="whitespace-nowrap px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-ink-600">Distribuidor</th>
-              <SortHeader label="Diferenca" field="diffPct" sortBy={sortBy} sortDir={sortDir} onSort={onSort} />
-              <th className="whitespace-nowrap px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-ink-600">Status</th>
+              <th className="whitespace-nowrap px-2 py-1.5 text-left text-[12px] font-semibold uppercase tracking-wide text-ink-600">
+                Distribuidor
+              </th>
+              <SortHeader label="Diferenca" field="diffPct" sortBy={sortBy} sortDir={sortDir} onSort={onSort} align="right" />
+              <th className="whitespace-nowrap px-2 py-1.5 text-center text-[12px] font-semibold uppercase tracking-wide text-ink-600">
+                Status
+              </th>
             </tr>
           </thead>
           <tbody>
             {loading
-              ? Array.from({ length: 8 }).map(function (_, i) {
+              ? Array.from({ length: 10 }).map(function (_, i) {
                   return (
                     <tr key={i} className="border-b border-line/60">
-                      <td colSpan={9} className="px-3 py-2">
+                      <td colSpan={8} className="px-2 py-1">
                         <div className="h-3 w-full animate-pulse rounded bg-line/60" />
                       </td>
                     </tr>
@@ -110,7 +120,7 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
 
             {!loading && rows.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-3 py-8 text-center text-[12px] text-ink-600">
+                <td colSpan={8} className="px-2 py-8 text-center text-[12px] text-ink-600">
                   Nenhum produto encontrado com esses filtros.
                 </td>
               </tr>
@@ -119,36 +129,27 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
             {!loading
               ? rows.map(function (r) {
                   return (
-                    <tr key={r.id} className="border-b border-line/60 hover:bg-surface/60">
-                      <td className="whitespace-nowrap px-3 py-2">
-                        {r.supplier ? (
-                          <span className="inline-flex items-center rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent-dark">
-                            {r.supplier}
-                          </span>
-                        ) : (
-                          <span className="text-[11px] text-ink-500">-</span>
-                        )}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2 font-mono text-[12px] text-ink-700">{r.ean}</td>
-                      <td className="max-w-[280px] whitespace-normal break-words px-3 py-2 text-[12px] text-ink-950">
+                    <tr key={r.id} className="border-b border-line/50 hover:bg-surface/60">
+                      <td className="truncate px-2 py-1 font-mono text-[11px] text-ink-700">{r.ean}</td>
+                      <td className="truncate px-2 py-1 text-[12px] text-ink-950" title={r.description}>
                         {r.description}
                       </td>
-                      <td className="max-w-[180px] whitespace-normal break-words px-3 py-2 text-[12px] text-ink-700">
+                      <td className="truncate px-2 py-1 text-[11px] text-ink-700" title={r.category || ""}>
                         {r.category ? r.category : "-"}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-right text-[12px] font-medium tabular-nums text-ink-950">
+                      <td className="whitespace-nowrap px-2 py-1 text-right text-[12px] font-medium tabular-nums text-ink-950">
                         {money(r.martinsPrice)}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-right text-[12px] tabular-nums text-ink-700">
+                      <td className="whitespace-nowrap px-2 py-1 text-right text-[12px] tabular-nums text-ink-700">
                         {r.marketPrice !== null ? money(r.marketPrice) : "-"}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-[12px] font-medium text-ink-700">
+                      <td className="truncate px-2 py-1 text-[11px] font-medium text-ink-700" title={r.bestCompetitor || ""}>
                         {r.bestCompetitor ? r.bestCompetitor : "-"}
                       </td>
-                      <td className="px-3 py-2">
-                        <DiffBar diffPct={r.diffPct} />
+                      <td className="whitespace-nowrap px-2 py-1 text-right">
+                        <DiffCell diffPct={r.diffPct} />
                       </td>
-                      <td className="whitespace-nowrap px-3 py-2">
+                      <td className="whitespace-nowrap px-2 py-1 text-center">
                         <StatusBadge status={r.status} />
                       </td>
                     </tr>
