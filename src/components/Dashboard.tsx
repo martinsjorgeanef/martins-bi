@@ -220,8 +220,6 @@ export function Dashboard() {
 
         <OpportunitiesInsights categories={categories} />
 
-        <OpportunitiesInsights categories={categories} />
-
         {stats ? <TopDisadvantageChart data={stats.topDisadvantage} /> : null}
 
         <div className="rounded-xl bg-white p-4 shadow-card">
