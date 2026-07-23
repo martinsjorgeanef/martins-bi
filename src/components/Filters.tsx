@@ -40,81 +40,74 @@ export function Filters(props: Props) {
   } = props;
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-line bg-white p-3 shadow-card lg:flex-row lg:flex-wrap lg:items-center">
-      <div className="relative flex-1 lg:min-w-[200px]">
-        <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" />
+    <div className="flex flex-nowrap items-center gap-2 overflow-x-auto rounded-xl border border-line bg-white p-2.5 shadow-card">
+      <div className="relative min-w-[160px] shrink-0 flex-1">
+        <Search size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-500" />
         <input
           value={search}
-          onChange={(e) => onSearch(e.target.value)}
-          placeholder="Buscar por EAN ou descrição..."
-          className="w-full rounded-lg border border-line bg-surface py-2 pl-9 pr-3 text-sm outline-none focus:border-accent"
+          onChange={function (e) { onSearch(e.target.value); }}
+          placeholder="Buscar..."
+          className="w-full rounded-lg border border-line bg-surface py-1.5 pl-7 pr-2 text-[12px] outline-none focus:border-accent"
         />
       </div>
 
       <select
         value={supplier}
-        onChange={(e) => onSupplier(e.target.value)}
-        className="rounded-lg border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-accent"
+        onChange={function (e) { onSupplier(e.target.value); }}
+        className="shrink-0 rounded-lg border border-line bg-surface px-2 py-1.5 text-[12px] outline-none focus:border-accent"
       >
-        <option value="">Todos os fornecedores</option>
-        {supplierNames.map((s) => (
-          <option key={s} value={s}>
-            {s}
-          </option>
-        ))}
+        <option value="">Fornecedor</option>
+        {supplierNames.map(function (s) {
+          return <option key={s} value={s}>{s}</option>;
+        })}
       </select>
 
       <select
         value={category}
-        onChange={(e) => onCategory(e.target.value)}
-        className="rounded-lg border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-accent"
+        onChange={function (e) { onCategory(e.target.value); }}
+        className="shrink-0 rounded-lg border border-line bg-surface px-2 py-1.5 text-[12px] outline-none focus:border-accent"
       >
-        <option value="">Todas as categorias</option>
-        {categories.map((c) => (
-          <option key={c} value={c}>
-            {c}
-          </option>
-        ))}
-      </select>
-
-      <select
-        value={status}
-        onChange={(e) => onStatus(e.target.value)}
-        className="rounded-lg border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-accent"
-      >
-        <option value="">Todos os status</option>
-        <option value="COMPETITIVO">Competitivo</option>
-        <option value="ATENCAO">Negociação pontual</option>
-        <option value="DESVANTAGEM">Desvantagem</option>
-        <option value="SEM_DADOS">Sem dados de mercado</option>
+        <option value="">Categoria</option>
+        {categories.map(function (c) {
+          return <option key={c} value={c}>{c}</option>;
+        })}
       </select>
 
       <select
         value={competitor}
-        onChange={(e) => onCompetitor(e.target.value)}
-        className="rounded-lg border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-accent"
+        onChange={function (e) { onCompetitor(e.target.value); }}
+        className="shrink-0 rounded-lg border border-line bg-surface px-2 py-1.5 text-[12px] outline-none focus:border-accent"
       >
-        <option value="">Todos os concorrentes</option>
-        {competitorNames.map((c) => (
-          <option key={c} value={c}>
-            {c}
-          </option>
-        ))}
+        <option value="">Concorrente</option>
+        {competitorNames.map(function (c) {
+          return <option key={c} value={c}>{c}</option>;
+        })}
       </select>
 
-      <div className="flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2">
-        <SlidersHorizontal size={14} className="text-ink-500" />
-        <label className="whitespace-nowrap text-xs text-ink-600">Limite negociação</label>
+      <select
+        value={status}
+        onChange={function (e) { onStatus(e.target.value); }}
+        className="shrink-0 rounded-lg border border-line bg-surface px-2 py-1.5 text-[12px] outline-none focus:border-accent"
+      >
+        <option value="">Status</option>
+        <option value="COMPETITIVO">Competitivo</option>
+        <option value="ATENCAO">Negociacao pontual</option>
+        <option value="DESVANTAGEM">Desvantagem</option>
+        <option value="SEM_DADOS">Sem dados</option>
+      </select>
+
+      <div className="flex shrink-0 items-center gap-1.5 rounded-lg border border-line bg-surface px-2 py-1.5">
+        <SlidersHorizontal size={12} className="text-ink-500" />
         <input
           type="number"
           min={0}
           max={100}
           step={0.5}
           value={threshold}
-          onChange={(e) => onThreshold(Number(e.target.value))}
-          className="w-14 bg-transparent text-sm font-semibold text-ink-950 outline-none"
+          onChange={function (e) { onThreshold(Number(e.target.value)); }}
+          className="w-10 bg-transparent text-[12px] font-semibold text-ink-950 outline-none"
         />
-        <span className="text-sm text-ink-600">%</span>
+        <span className="text-[12px] text-ink-600">%</span>
       </div>
     </div>
   );
