@@ -51,6 +51,15 @@ export function buildComprasEmail(
     lines.push("");
   }
 
+  if (industry && industry.diferenca > 0) {
+    lines.push(
+      "Além disso, identificamos uma oportunidade de ampliação de mix: o concorrente possui " +
+        industry.diferenca +
+        " itens cadastrados dessa indústria que a Martins ainda não trabalha. Como a indústria já performa bem no estado, esse pode ser um caminho interessante para aumentar o número de SKUs ativos."
+    );
+    lines.push("");
+  }
+
   lines.push(
     "Gostaria de contar com seu apoio na avaliação dessas categorias e na priorização das negociações, buscando reduzir a diferença em relação aos concorrentes e fortalecer nosso posicionamento no mercado."
   );
