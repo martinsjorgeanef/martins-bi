@@ -7,46 +7,59 @@ export interface StatsForEmail {
   disadvantage: number;
 }
 
-export function buildComprasEmail(stats: StatsForEmail, categories: CategoryRow[], industries: IndustryRow[]) {
-  const pct = stats.matchedProducts > 0 ? Math.round((stats.competitive / stats.matchedProducts) * 100) : 0;
-  const priorityCategories = categories.filter((c) => c.priority !== "Baixa").slice(0, 3).map((c) => c.category);
-  const priorityIndustries = industries.filter((i) => i.priority !== "Baixa").slice(0, 3).map((i) => i.fornecedor);
+function formatPct(n: number): string {
+  return n.toFixed(1).replace(".", ",") + "%";
+}
 
-  const subject = "Análise de Competitividade - Painel Martins";
-  const lines: string[] = [
-    "Olá,",
-    "",
-    "Realizamos a atualização da análise de competitividade dos preços da Martins em comparação com os principais concorrentes.",
-    "",
-    "Resumo da análise",
-    "- Produtos monitorados: " + stats.matchedProducts,
-    "- Competitivos: " + stats.competitive + " (" + pct + "%)",
-    "- Em negociação: " + stats.attention,
-    "- Em desvantagem: " + stats.disadvantage,
-    ""
-  ];
+export function buildComprasEmail(
+  categories: CategoryRow[],
+  industry: IndustryRow | undefined,
+  buyerName: string,
+  state: string
+) {
+  const industryName = industry ? industry.fornecedor : "[Nome da Indústria]";
+  const buyer = buyerName.trim() || "[Nome do Comprador]";
+  const uf = state.trim() || "[Estado]";
 
-  if (priorityCategories.length > 0) {
-    lines.push("As principais oportunidades concentram-se nas categorias:");
-    priorityCategories.forEach((c) => lines.push("- " + c));
+  const subject = "Análise de Competitividade - Estado do " + uf + " | Indústria " + industryName;
+
+  const opportunityCategories = categories
+    .filter((c) => c.priority !== "Baixa")
+    .sort((a, b) => a.competitivePct - b.competitivePct);
+
+  const lines: string[] = [];
+  lines.push("Olá, " + buyer + ",");
+  lines.push("");
+  lines.push(
+    "Segue a análise de competitividade realizada no estado do " +
+      uf +
+      ", comparando o desempenho da Martins em relação aos principais distribuidores do mercado para a indústria " +
+      industryName +
+      "."
+  );
+  lines.push("");
+
+  if (opportunityCategories.length > 0) {
+    lines.push("Nesta atualização, identificamos oportunidades de melhoria concentradas principalmente nas seguintes categorias:");
     lines.push("");
-  }
-
-  if (priorityIndustries.length > 0) {
-    lines.push("As indústrias que mais demandam atenção são:");
-    priorityIndustries.forEach((i) => lines.push("- " + i));
+    for (const c of opportunityCategories) {
+      const desvantagem = c.avgDisadvantagePct !== null ? formatPct(c.avgDisadvantagePct) : "—";
+      lines.push("- " + c.category + " — Competitividade: " + formatPct(c.competitivePct) + " | Desvantagem média: " + desvantagem);
+    }
+    lines.push("");
+    lines.push("Essas categorias concentram nossas maiores oportunidades de recuperação de competitividade no estado.");
     lines.push("");
   }
 
   lines.push(
-    "Solicitações para a área de Compras",
-    "- Priorizar negociação dos itens classificados como Em Desvantagem.",
-    "- Revisar categorias com menor competitividade.",
-    "- Avaliar oportunidades de ampliação do mix.",
-    "- Acompanhar a evolução dos indicadores após as negociações.",
-    "",
-    "Obrigado."
+    "Gostaria de contar com seu apoio na avaliação dessas categorias e na priorização das negociações, buscando reduzir a diferença em relação aos concorrentes e fortalecer nosso posicionamento no mercado."
   );
+  lines.push("");
+  lines.push("Na sequência, segue o detalhamento completo dos itens analisados para apoiar as negociações.");
+  lines.push("");
+  lines.push("Desde já, agradeço pela parceria e pelo apoio de sempre.");
+  lines.push("");
+  lines.push("Atenciosamente,");
 
   return { subject: subject, body: lines.join("\n") };
 }
