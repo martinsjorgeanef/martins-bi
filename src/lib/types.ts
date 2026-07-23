@@ -13,6 +13,8 @@ export interface ProductRow {
   status: CompetitivenessStatus | "SEM_DADOS";
   competitors: { name: string; price: number }[];
   martinsUpdatedAt: string;
+  requiredDiscountPct?: number;
+}
   simulatedStatus?: CompetitivenessStatus;
   simulatedDiffPct?: number;
 }
