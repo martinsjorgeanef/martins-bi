@@ -76,7 +76,7 @@ export async function GET() {
       return w.ean;
     })
     .concat(
-      top10Best.map(function (w) {
+      bestSorted.slice(0, 100).map(function (w) {
         return w.ean;
       })
     );
@@ -115,7 +115,7 @@ export async function GET() {
         diffPct: Math.round(w.diffPct * 1000) / 10
       };
     }),
-    topAdvantage: top10Best.map(function (w) {
+   topAdvantage: bestSorted.slice(0, 100).map(function (w) {
       return {
         ean: w.ean,
         description: longDescByEan.get(w.ean) || w.description,
