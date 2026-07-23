@@ -13,7 +13,8 @@ import { ProductsTable } from "./ProductsTable";
 import { UploadPanel } from "./UploadPanel";
 import { ExportButtons } from "./ExportButtons";
 import { DashboardStats, ProductRow, IndustryRow, CategoryRow } from "@/lib/types";
-import { UploadCloud, BarChart3 } from "lucide-react";
+import { UploadCloud, BarChart3, Megaphone } from "lucide-react";
+import Link from "next/link";
 
 interface StatsResponse extends DashboardStats {
   thresholdPct: number;
