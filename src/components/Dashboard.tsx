@@ -5,9 +5,9 @@ import { KpiCards } from "./KpiCards";
 import { ExecutiveSummary } from "./ExecutiveSummary";
 import { PriorityActions } from "./PriorityActions";
 import { PriorityVendorCard } from "./PriorityVendorCard";
-import { CategoryTable } from "./CategoryTable";
-import { TopDisadvantageChart } from "./Charts";
 import { OpportunitiesInsights } from "./OpportunitiesInsights";
+import { TopDisadvantageChart } from "./Charts";
+import { CategoryTable } from "./CategoryTable";
 import { Filters } from "./Filters";
 import { ProductsTable } from "./ProductsTable";
 import { UploadPanel } from "./UploadPanel";
@@ -47,8 +47,8 @@ export function Dashboard() {
   const [uploadOpen, setUploadOpen] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search), 350);
-    return () => clearTimeout(t);
+    const t = setTimeout(function () { setDebouncedSearch(search); }, 350);
+    return function () { clearTimeout(t); };
   }, [search]);
 
   useEffect(() => {
@@ -68,14 +68,14 @@ export function Dashboard() {
     setRowsLoading(true);
     const params = new URLSearchParams({
       search: debouncedSearch,
-      category,
-      status,
-      competitor,
-      supplier,
+      category: category,
+      status: status,
+      competitor: competitor,
+      supplier: supplier,
       page: String(page),
       pageSize: "50",
-      sortBy,
-      sortDir
+      sortBy: sortBy,
+      sortDir: sortDir
     });
     const res = await fetch("/api/products?" + params.toString());
     const data = await res.json();
@@ -100,41 +100,28 @@ export function Dashboard() {
   const fetchAllFilteredRows = useCallback(async (): Promise<ProductRow[]> => {
     const params = new URLSearchParams({
       search: debouncedSearch,
-      category,
-      status,
-      competitor,
-      supplier,
+      category: category,
+      status: status,
+      competitor: competitor,
+      supplier: supplier,
       page: "1",
       pageSize: "5000",
-      sortBy,
-      sortDir
+      sortBy: sortBy,
+      sortDir: sortDir
     });
     const res = await fetch("/api/products?" + params.toString());
     const data = await res.json();
     return data.rows as ProductRow[];
   }, [debouncedSearch, category, status, competitor, supplier, sortBy, sortDir]);
 
-  useEffect(() => {
-    loadStats();
-  }, [loadStats]);
-
-  useEffect(() => {
-    loadRows();
-  }, [loadRows]);
-
-  useEffect(() => {
-    loadIndustries();
-  }, [loadIndustries]);
-
-  useEffect(() => {
-    loadCategories();
-  }, [loadCategories]);
+  useEffect(() => { loadStats(); }, [loadStats]);
+  useEffect(() => { loadRows(); }, [loadRows]);
+  useEffect(() => { loadIndustries(); }, [loadIndustries]);
+  useEffect(() => { loadCategories(); }, [loadCategories]);
 
   function handleSort(field: string) {
     if (field === sortBy) {
-      setSortDir(function (d) {
-        return d === "asc" ? "desc" : "asc";
-      });
+      setSortDir(function (d) { return d === "asc" ? "desc" : "asc"; });
     } else {
       setSortBy(field);
       setSortDir("asc");
@@ -171,17 +158,15 @@ export function Dashboard() {
               <BarChart3 size={18} className="text-white" />
             </div>
             <div>
-              <h1 className="text-[14px] font-semibold leading-tight text-white">Painel de Competitividade</h1>
-              <p className="text-[11px] leading-tight text-white/50">Martins x Mercado</p>
+              <h1 className="text-[13px] font-semibold leading-tight text-white">Painel de Competitividade</h1>
+              <p className="text-[9px] leading-tight text-white/50">Martins x Mercado</p>
             </div>
           </div>
           <button
-            onClick={function () {
-              setUploadOpen(true);
-            }}
-            className="flex items-center gap-2 rounded-lg bg-accent px-3.5 py-2 text-[13px] font-medium text-white transition hover:bg-accent-dark"
+            onClick={function () { setUploadOpen(true); }}
+            className="flex items-center gap-2 rounded-lg bg-accent px-3.5 py-2 text-[11px] font-medium text-white transition hover:bg-accent-dark"
           >
-            <UploadCloud size={16} />
+            <UploadCloud size={14} />
             <span className="hidden sm:inline">Enviar planilha</span>
           </button>
         </div>
@@ -190,17 +175,15 @@ export function Dashboard() {
       <main className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-6 lg:px-6">
         {!statsLoading && stats && stats.matchedProducts === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-xl bg-white p-10 text-center shadow-card">
-            <UploadCloud size={28} className="text-accent" />
-            <h2 className="text-[16px] font-semibold text-ink-950">Nenhum dado carregado ainda</h2>
-            <p className="max-w-md text-[13px] text-ink-600">
+            <UploadCloud size={26} className="text-accent" />
+            <h2 className="text-[12px] font-semibold text-[#1F2937]">Nenhum dado carregado ainda</h2>
+            <p className="max-w-md text-[9px] text-[#6B7280]">
               Envie primeiro a planilha de precos da Martins e depois a planilha de um concorrente para comecar a
               comparar precos.
             </p>
             <button
-              onClick={function () {
-                setUploadOpen(true);
-              }}
-              className="mt-1 rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-dark"
+              onClick={function () { setUploadOpen(true); }}
+              className="mt-1 rounded-lg bg-accent px-4 py-2 text-[11px] font-semibold text-white hover:bg-accent-dark"
             >
               Enviar primeira planilha
             </button>
@@ -222,24 +205,17 @@ export function Dashboard() {
 
         <PriorityVendorCard industry={industries[0]} />
 
+        <OpportunitiesInsights categories={categories} />
+
+        {stats ? <TopDisadvantageChart data={stats.topDisadvantage} /> : null}
+
         <div className="rounded-xl bg-white p-4 shadow-card">
-          <h3 className="text-[16px] font-semibold text-ink-950">Analise por Categoria</h3>
-          <p className="mt-0.5 text-[12px] text-ink-500">Da pior para a melhor competitividade</p>
+          <h3 className="text-[12px] font-semibold text-[#1F2937]">Categorias</h3>
+          <p className="mt-0.5 text-[8px] text-[#94A3B8]">Da pior para a melhor posicionamento de mercado</p>
           <div className="mt-3">
             <CategoryTable categories={categories} />
           </div>
         </div>
-
-        {stats ? (
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-            <div className="lg:col-span-3">
-              <TopDisadvantageChart data={stats.topDisadvantage} />
-            </div>
-            <div className="lg:col-span-2">
-              <OpportunitiesInsights items={stats.topDisadvantage} />
-            </div>
-          </div>
-        ) : null}
 
         <Filters
           search={search}
