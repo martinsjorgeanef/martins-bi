@@ -20,6 +20,8 @@ interface Props {
   onThreshold: (v: number) => void;
 }
 
+var FIELD_CLASS = "h-9 rounded-lg border border-line bg-surface px-3 text-[13px] text-ink-800 outline-none focus:border-accent";
+
 export function Filters(props: Props) {
   const {
     search,
@@ -40,21 +42,21 @@ export function Filters(props: Props) {
   } = props;
 
   return (
-    <div className="flex flex-nowrap items-center gap-2 overflow-x-auto rounded-xl border border-line bg-white p-2.5 shadow-card">
-      <div className="relative min-w-[160px] shrink-0 flex-1">
-        <Search size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-500" />
+    <div className="flex flex-nowrap items-center gap-2 overflow-x-auto rounded-xl border border-line bg-white p-3 shadow-card">
+      <div className="relative min-w-[200px] shrink-0 flex-1">
+        <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" />
         <input
           value={search}
           onChange={function (e) { onSearch(e.target.value); }}
-          placeholder="Buscar..."
-          className="w-full rounded-lg border border-line bg-surface py-1.5 pl-7 pr-2 text-[12px] outline-none focus:border-accent"
+          placeholder="🔍 Buscar por EAN ou descricao..."
+          className={FIELD_CLASS + " w-full pl-8"}
         />
       </div>
 
       <select
         value={supplier}
         onChange={function (e) { onSupplier(e.target.value); }}
-        className="shrink-0 rounded-lg border border-line bg-surface px-2 py-1.5 text-[12px] outline-none focus:border-accent"
+        className={FIELD_CLASS + " shrink-0"}
       >
         <option value="">Fornecedor</option>
         {supplierNames.map(function (s) {
@@ -65,7 +67,7 @@ export function Filters(props: Props) {
       <select
         value={category}
         onChange={function (e) { onCategory(e.target.value); }}
-        className="shrink-0 rounded-lg border border-line bg-surface px-2 py-1.5 text-[12px] outline-none focus:border-accent"
+        className={FIELD_CLASS + " shrink-0"}
       >
         <option value="">Categoria</option>
         {categories.map(function (c) {
@@ -76,7 +78,7 @@ export function Filters(props: Props) {
       <select
         value={competitor}
         onChange={function (e) { onCompetitor(e.target.value); }}
-        className="shrink-0 rounded-lg border border-line bg-surface px-2 py-1.5 text-[12px] outline-none focus:border-accent"
+        className={FIELD_CLASS + " shrink-0"}
       >
         <option value="">Concorrente</option>
         {competitorNames.map(function (c) {
@@ -87,7 +89,7 @@ export function Filters(props: Props) {
       <select
         value={status}
         onChange={function (e) { onStatus(e.target.value); }}
-        className="shrink-0 rounded-lg border border-line bg-surface px-2 py-1.5 text-[12px] outline-none focus:border-accent"
+        className={FIELD_CLASS + " shrink-0"}
       >
         <option value="">Status</option>
         <option value="COMPETITIVO">Competitivo</option>
@@ -96,8 +98,9 @@ export function Filters(props: Props) {
         <option value="SEM_DADOS">Sem dados</option>
       </select>
 
-      <div className="flex shrink-0 items-center gap-1.5 rounded-lg border border-line bg-surface px-2 py-1.5">
-        <SlidersHorizontal size={12} className="text-ink-500" />
+      <div className={FIELD_CLASS + " flex shrink-0 items-center gap-1.5"}>
+        <SlidersHorizontal size={13} className="text-ink-500" />
+        <span className="whitespace-nowrap text-[12px] text-ink-500">Limite Negociacao</span>
         <input
           type="number"
           min={0}
@@ -105,9 +108,9 @@ export function Filters(props: Props) {
           step={0.5}
           value={threshold}
           onChange={function (e) { onThreshold(Number(e.target.value)); }}
-          className="w-10 bg-transparent text-[12px] font-semibold text-ink-950 outline-none"
+          className="w-10 bg-transparent text-[13px] font-semibold text-ink-950 outline-none"
         />
-        <span className="text-[12px] text-ink-600">%</span>
+        <span className="text-[13px] text-ink-600">%</span>
       </div>
     </div>
   );
