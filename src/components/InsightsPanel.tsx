@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { TrendingUp, AlertTriangle, Factory } from "lucide-react";
 import { IndustryRow } from "@/lib/types";
 
 interface StatsLike {
@@ -18,43 +18,43 @@ interface Props {
 export function InsightsPanel({ stats, industries }: Props) {
   if (!stats || stats.matchedProducts === 0) return null;
 
-  const pctCompetitive = (stats.competitive / stats.matchedProducts) * 100;
+  const pctCompetitive = Math.round((stats.competitive / stats.matchedProducts) * 100);
   const industriaAtiva = industries[0];
 
-  const insights: string[] = [];
-
-  insights.push(`${pctCompetitive.toFixed(0)}% dos produtos comparados estão competitivos frente ao mercado.`);
-
-  if (stats.disadvantage > 0) {
-    insights.push(
-      `${stats.disadvantage} produto${stats.disadvantage !== 1 ? "s precisam" : " precisa"} de revisão imediata de preço (em desvantagem).`
-    );
-  }
-
-  if (industriaAtiva) {
-    insights.push(`Os dados em análise agora se concentram na indústria ${industriaAtiva.fornecedor}.`);
-  }
-
-  if (stats.attention > 0) {
-    insights.push(
-      `${stats.attention} produto${stats.attention !== 1 ? "s estão" : " está"} próximo${stats.attention !== 1 ? "s" : ""} da faixa de desvantagem (negociação pontual).`
-    );
-  }
+  const opportunityText = industriaAtiva
+    ? `${industriaAtiva.fornecedor} concentra a maior parte dos itens em desvantagem.`
+    : "Nenhuma indústria em análise no momento.";
 
   return (
-    <div className="rounded-xl border border-accent/20 bg-accent/[0.04] p-4">
-      <div className="mb-2 flex items-center gap-1.5">
-        <Sparkles size={14} className="text-accent" />
-        <h3 className="font-display text-xs font-semibold text-ink-950">Insights automáticos</h3>
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="rounded-xl bg-white p-4 shadow-card">
+        <div className="flex items-center gap-2">
+          <TrendingUp size={16} className="text-good" />
+          <span className="text-[13px] font-semibold text-ink-950">Competitividade</span>
+        </div>
+        <p className="mt-2 text-[13px] leading-relaxed text-ink-700">
+          <strong className="text-[16px] text-ink-950">{pctCompetitive}%</strong> dos produtos estão competitivos.
+        </p>
       </div>
-      <ul className="space-y-1">
-        {insights.map((text, i) => (
-          <li key={i} className="flex items-start gap-2 text-[12px] leading-relaxed text-ink-800">
-            <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-accent" />
-            {text}
-          </li>
-        ))}
-      </ul>
+
+      <div className="rounded-xl bg-white p-4 shadow-card">
+        <div className="flex items-center gap-2">
+          <AlertTriangle size={16} className="text-bad" />
+          <span className="text-[13px] font-semibold text-ink-950">Prioridade</span>
+        </div>
+        <p className="mt-2 text-[13px] leading-relaxed text-ink-700">
+          <strong className="text-[16px] text-ink-950">{stats.disadvantage}</strong> produto
+          {stats.disadvantage !== 1 ? "s" : ""} precisa{stats.disadvantage !== 1 ? "m" : ""} de negociação imediata.
+        </p>
+      </div>
+
+      <div className="rounded-xl bg-white p-4 shadow-card">
+        <div className="flex items-center gap-2">
+          <Factory size={16} className="text-accent" />
+          <span className="text-[13px] font-semibold text-ink-950">Principal oportunidade</span>
+        </div>
+        <p className="mt-2 text-[13px] leading-relaxed text-ink-700">{opportunityText}</p>
+      </div>
     </div>
   );
 }
