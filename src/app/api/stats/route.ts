@@ -20,6 +20,10 @@ export async function GET() {
   let attention = 0;
   let disadvantage = 0;
   let diffSum = 0;
+  let recoveryDiscountSum = 0;
+  let recoveryGreen = 0;
+  let recoveryYellow = 0;
+  let recoveryRed = 0;
 
   const matchedItems: {
     ean: string;
@@ -50,9 +54,17 @@ export async function GET() {
 
     if (status === "COMPETITIVO") competitive++;
     else if (status === "ATENCAO") attention++;
-    else disadvantage++;
+    else {
+      disadvantage++;
+      var requiredDiscount = calcRequiredDiscountPct(p.martinsPrice, best.price, thresholdFraction);
+      recoveryDiscountSum += requiredDiscount;
+      if (requiredDiscount * 100 <= 2) recoveryGreen++;
+      else if (requiredDiscount * 100 <= 5) recoveryYellow++;
+      else recoveryRed++;
+    }
 
-    matchedItems.push({
+    matchedItems.push({ ean: p.ean, description: p.description, diffPct: diffPct, category: p.category, martinsPrice: p.martinsPrice });
+  }
       ean: p.ean,
       description: p.description,
       diffPct: diffPct,
@@ -115,6 +127,15 @@ export async function GET() {
         diffPct: Math.round(w.diffPct * 1000) / 10
       };
     }),
+    recoveryPotential: disadvantage > 0 ? {
+      avgDiscountPct: Math.round((recoveryDiscountSum / disadvantage) * 1000) / 10,
+      itemsRecoverable: disadvantage,
+      oldCompetitivePct: matched > 0 ? Math.round((competitive / matched) * 1000) / 10 : 0,
+      newCompetitivePct: matched > 0 ? Math.round(((competitive + disadvantage) / matched) * 1000) / 10 : 0,
+      green: recoveryGreen,
+      yellow: recoveryYellow,
+      red: recoveryRed
+    } : null,
    topAdvantage: bestSorted.slice(0, 100).map(function (w) {
       return {
         ean: w.ean,
