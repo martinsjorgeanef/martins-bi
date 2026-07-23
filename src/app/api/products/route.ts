@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { calcDiffPct, calcStatus } from "@/lib/calculations";
+import { calcDiffPct, calcStatus, calcRequiredDiscountPct } from "@/lib/calculations";
 import { ProductRow } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -65,15 +65,8 @@ function buildRow(
     martinsUpdatedAt: product.martinsUpdatedAt.toISOString()
   };
 
-  // Simulacao de negociacao: so faz sentido para itens hoje em desvantagem.
-  // Aplica a reducao de preco (mesmo % do "Limite Negociacao") e ve se o item passaria
-  // a competitivo ou negociacao pontual.
-  if (status === "DESVANTAGEM" && thresholdFraction > 0) {
-    const simulatedPrice = product.martinsPrice * (1 - thresholdFraction);
-    const simulatedDiffPct = calcDiffPct(simulatedPrice, best.price);
-    const simulatedStatus = calcStatus(simulatedDiffPct, thresholdFraction);
-    row.simulatedStatus = simulatedStatus;
-    row.simulatedDiffPct = simulatedDiffPct;
+  if (status === "DESVANTAGEM") {
+    row.requiredDiscountPct = calcRequiredDiscountPct(product.martinsPrice, best.price, thresholdFraction);
   }
 
   return row;
