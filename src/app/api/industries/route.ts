@@ -9,12 +9,18 @@ export async function GET() {
   const settings = await prisma.settings.findUnique({ where: { id: "singleton" } });
   const thresholdFraction = (settings?.thresholdPct ?? 5) / 100;
 
-  const cadgerItems = await prisma.cadgerItem.findMany();
+  const catalogItems = await prisma.competitorCatalogItem.findMany();
 
-  if (cadgerItems.length === 0) {
+  if (catalogItems.length === 0) {
     return NextResponse.json({ industries: [], hasCadger: false });
   }
 
+  // Só considera as indústrias que realmente têm planilha de concorrente importada agora
+  const fornecedoresImportados = Array.from(new Set(catalogItems.map((c) => c.fornecedor)));
+
+  const cadgerItems = await prisma.cadgerItem.findMany({
+    where: { fornecedor: { in: fornecedoresImportados } }
+  });
   const eans = cadgerItems.map((c) => c.ean);
   const products = await prisma.product.findMany({
     where: { ean: { in: eans } },
@@ -22,7 +28,6 @@ export async function GET() {
   });
   const productByEan = new Map(products.map((p) => [p.ean, p]));
 
-  const catalogItems = await prisma.competitorCatalogItem.findMany();
   type ConcAgg = { cadastrados: number; comPreco: number };
   const concByFornecedor = new Map<string, ConcAgg>();
   for (const c of catalogItems) {
@@ -70,9 +75,17 @@ export async function GET() {
     byFornecedor.set(item.fornecedor, entry);
   }
 
-  const industries = Array.from(byFornecedor.entries())
-    .map(([fornecedor, data]) => {
-      const conc = concByFornecedor.get(fornecedor) ?? { cadastrados: 0, comPreco: 0 };
+  const industries = fornecedoresImportados
+    .map((fornecedor) => {
+      const data = byFornecedor.get(fornecedor) ?? {
+        cadastrados: 0,
+        itensMartins: 0,
+        competitive: 0,
+        attention: 0,
+        disadvantage: 0,
+        matched: 0
+      };
+      const conc = concByFornecedor.get(fornecedor)!;
       const competitivePct = data.matched > 0 ? Math.round((data.competitive / data.matched) * 1000) / 10 : 0;
       const diferenca = conc.cadastrados - data.itensMartins;
       const ruptura = data.cadastrados - data.itensMartins;
@@ -102,7 +115,7 @@ export async function GET() {
         summary
       };
     })
-    .sort((a, b) => b.cadastrados - a.cadastrados);
+    .sort((a, b) => b.itensConcorrenteCadastrados - a.itensConcorrenteCadastrados);
 
   return NextResponse.json({ industries, hasCadger: true });
 }
