@@ -46,85 +46,89 @@ export function VendasReport() {
   if (loading) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-8">
-        <p className="text-[13px] text-ink-600">Carregando...</p>
+        <p className="text-[14px] text-ink-600">Carregando...</p>
       </div>
     );
   }
 
-  var byCategory = new Map<string, Map<string, VariantLine[]>>();
+  var byCategory = new Map<string, Map<string, Map<string, VariantLine[]>>>();
 
   items.forEach(function (it) {
     var category = it.category ? it.category : "Sem categoria";
     var cleaned = cleanProductName(it.description);
 
     if (!byCategory.has(category)) byCategory.set(category, new Map());
-    var itemMap = byCategory.get(category) as Map<string, VariantLine[]>;
+    var brandMap = byCategory.get(category) as Map<string, Map<string, VariantLine[]>>;
+
+    if (!brandMap.has(cleaned.brand)) brandMap.set(cleaned.brand, new Map());
+    var itemMap = brandMap.get(cleaned.brand) as Map<string, VariantLine[]>;
 
     if (!itemMap.has(cleaned.itemName)) itemMap.set(cleaned.itemName, []);
     var arr = itemMap.get(cleaned.itemName) as VariantLine[];
     arr.push({ weight: cleaned.weight, price: it.martinsPrice });
   });
 
-  var categoryNames = Array.from(byCategory.keys()).sort(function (a, b) {
-    var mapA = byCategory.get(a) as Map<string, VariantLine[]>;
-    var mapB = byCategory.get(b) as Map<string, VariantLine[]>;
-    return mapB.size - mapA.size;
-  });
+  var categoryNames = Array.from(byCategory.keys()).sort();
 
   return (
     <div className="min-h-screen bg-surface">
       <header className="border-b border-line bg-ink-950 px-4 py-3">
-        <div className="mx-auto flex max-w-3xl items-center justify-between gap-2">
-          <Link href="/" className="flex items-center gap-1.5 text-[12px] text-white/70 hover:text-white">
-            <ArrowLeft size={14} />
+        <div className="mx-auto flex max-w-2xl items-center justify-between gap-2">
+          <Link href="/" className="flex items-center gap-1.5 text-[13px] text-white/70 hover:text-white">
+            <ArrowLeft size={15} />
             Voltar ao painel
           </Link>
           <button
             onClick={function () { setMessageOpen(true); }}
-            className="flex items-center gap-1.5 rounded-lg bg-good px-3 py-1.5 text-[11px] font-semibold text-white hover:opacity-90"
+            className="flex items-center gap-1.5 rounded-lg bg-good px-3 py-2 text-[13px] font-semibold text-white hover:opacity-90"
           >
-            <MessageCircle size={13} />
+            <MessageCircle size={15} />
             Gerar mensagem para Vendas
           </button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-4 py-6">
-        <h1 className="mb-1 text-[14px] font-semibold text-[#1F2937]">Para Vendas</h1>
-        <p className="mb-4 text-[10px] text-[#94A3B8]">Categorias e itens com maior oportunidade comercial</p>
+      <main className="mx-auto max-w-2xl px-4 py-6">
+        <h1 className="mb-4 text-[20px] font-bold text-[#1F2937]">🔥 Oportunidades do Dia</h1>
 
         {categoryNames.length === 0 ? (
           <div className="rounded-xl bg-white p-6 text-center shadow-card">
-            <p className="text-[11px] text-ink-600">Nenhuma oportunidade identificada no momento.</p>
+            <p className="text-[13px] text-ink-600">Nenhuma oportunidade identificada no momento.</p>
           </div>
         ) : (
           <div className="flex flex-col gap-4">
             {categoryNames.map(function (category) {
-              var itemMap = byCategory.get(category) as Map<string, VariantLine[]>;
-              var itemNames = Array.from(itemMap.keys()).sort();
+              var brandMap = byCategory.get(category) as Map<string, Map<string, VariantLine[]>>;
+              var brandNames = Array.from(brandMap.keys()).sort();
 
               return (
                 <div key={category} className="rounded-xl bg-white p-4 shadow-card">
-                  <h3 className="text-[12px] font-semibold text-[#1F2937]">
+                  <h2 className="text-[16px] font-bold text-[#1F2937]">
                     {emojiFor(category)} {category.toUpperCase()}
-                  </h3>
+                  </h2>
 
-                  <div className="mt-2 flex flex-col gap-2">
-                    {itemNames.map(function (itemName) {
-                      var variants = itemMap.get(itemName) as VariantLine[];
+                  <div className="mt-3 flex flex-col gap-3">
+                    {brandNames.map(function (brand) {
+                      var itemMap = brandMap.get(brand) as Map<string, VariantLine[]>;
+                      var itemNames = Array.from(itemMap.keys()).sort();
+
                       return (
-                        <div key={itemName}>
-                          <div className="text-[10px] font-medium text-[#1F2937]">{itemName}</div>
-                          <ul className="mt-0.5 space-y-0.5 pl-3">
-                            {variants.map(function (v, idx) {
-                              return (
-                                <li key={idx} className="flex items-center justify-between text-[10px] text-[#6B7280]">
-                                  <span>{v.weight ? v.weight : "-"}</span>
-                                  <span className="font-semibold text-[#16A34A]">
-                                    {v.price !== undefined ? money(v.price) : "-"}
-                                  </span>
-                                </li>
-                              );
+                        <div key={brand}>
+                          <div className="text-[13px] font-bold uppercase tracking-wide text-[#2563EB]">{brand}</div>
+                          <ul className="mt-1 space-y-1 pl-1">
+                            {itemNames.map(function (itemName) {
+                              var variants = itemMap.get(itemName) as VariantLine[];
+                              return variants.map(function (v, idx) {
+                                var label = v.weight ? itemName + " " + v.weight : itemName;
+                                return (
+                                  <li key={itemName + idx} className="flex items-center justify-between gap-2 text-[13px]">
+                                    <span className="text-[#1F2937]">{label}</span>
+                                    <span className="font-bold text-[#16A34A]">
+                                      {v.price !== undefined ? money(v.price) : "-"}
+                                    </span>
+                                  </li>
+                                );
+                              });
                             })}
                           </ul>
                         </div>
