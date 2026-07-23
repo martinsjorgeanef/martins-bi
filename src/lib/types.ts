@@ -35,4 +35,19 @@ export interface IndustryRow {
   itensConcorrenteComPreco: number;
   diferenca: number;
   ruptura: number;
+  competitivePct: number;
+  disadvantage: number;
+  priority: "Alta" | "Média" | "Baixa";
+  summary: string;
+}
+
+export interface CategoryRow {
+  category: string;
+  monitored: number;
+  competitive: number;
+  attention: number;
+  disadvantage: number;
+  competitivePct: number;
+  priority: "Alta" | "Média" | "Baixa";
+  summary: string;
 }
