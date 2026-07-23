@@ -69,7 +69,9 @@ export async function POST(req: NextRequest) {
       processed = totalRows;
       skipped = parseSkipped;
 
-      // "Visão por indústria" sempre mostra só a última indústria enviada: apaga tudo antes de gravar a nova
+      // Cada comprador atua com uma indústria por vez: cada novo envio de concorrente
+      // substitui COMPLETAMENTE o que existia antes, tanto na "Visão por indústria"
+      // quanto no painel principal (tabela de produtos, gráficos, KPIs).
       await prisma.competitorCatalogItem.deleteMany({});
       await prisma.competitorPrice.deleteMany({});
 
@@ -89,12 +91,8 @@ export async function POST(req: NextRequest) {
         const product = await prisma.product.findUnique({ where: { ean: row.ean } });
         if (!product) continue;
 
-        await prisma.competitorPrice.upsert({
-          where: {
-            productId_competitorName: { productId: product.id, competitorName: sourceName! }
-          },
-          create: { productId: product.id, competitorName: sourceName!, price: row.price },
-          update: { price: row.price }
+        await prisma.competitorPrice.create({
+          data: { productId: product.id, competitorName: sourceName!, price: row.price }
         });
       }
     }
