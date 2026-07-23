@@ -21,7 +21,10 @@ export function EmailComprasModal({ open, onClose, subject, body }: Props) {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  const mailtoHref = "mailto:?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
+  function handleOpenEmail() {
+    const mailtoHref = "mailto:?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
+    window.location.href = mailtoHref;
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/40 p-4">
@@ -54,13 +57,13 @@ export function EmailComprasModal({ open, onClose, subject, body }: Props) {
             {copied ? <Check size={14} className="text-good" /> : <Copy size={14} />}
             {copied ? "Copiado!" : "Copiar texto"}
           </button>
-          
-            href={mailtoHref}
+          <button
+            onClick={handleOpenEmail}
             className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-accent py-2 text-[13px] font-semibold text-white hover:bg-accent-dark"
           >
             <Mail size={14} />
             Abrir no e-mail
-          </a>
+          </button>
         </div>
       </div>
     </div>
