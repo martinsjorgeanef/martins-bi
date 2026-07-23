@@ -3,7 +3,12 @@
 @tailwind utilities;
 
 html {
-  font-size: 80%;
+  font-size: 90%;
+}
+
+:root {
+  --font-plex: var(--font-inter);
+  --font-mono: var(--font-inter);
 }
 
 * {
