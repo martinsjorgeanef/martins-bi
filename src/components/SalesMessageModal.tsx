@@ -9,11 +9,12 @@ interface Props {
   open: boolean;
   onClose: () => void;
   items: DisadvantageItem[];
+  industryName: string | null;
 }
 
-export function SalesMessageModal({ open, onClose, items }: Props) {
+export function SalesMessageModal({ open, onClose, items, industryName }: Props) {
   const [copied, setCopied] = useState(false);
-  const message = useMemo(function () { return buildVendasMessage(items); }, [items]);
+  const message = useMemo(function () { return buildVendasMessage(items, industryName); }, [items, industryName]);
 
   if (!open) return null;
 
@@ -24,12 +25,12 @@ export function SalesMessageModal({ open, onClose, items }: Props) {
   }
 
   function handleOpenEmail() {
-    const href = "mailto:?subject=" + encodeURIComponent(message.subject) + "&body=" + encodeURIComponent(message.body);
+    var href = "mailto:?subject=" + encodeURIComponent(message.subject) + "&body=" + encodeURIComponent(message.body);
     window.location.href = href;
   }
 
   function handleOpenWhatsApp() {
-    const href = "https://wa.me/?text=" + encodeURIComponent(message.body);
+    var href = "https://wa.me/?text=" + encodeURIComponent(message.body);
     window.open(href, "_blank");
   }
 
@@ -37,38 +38,38 @@ export function SalesMessageModal({ open, onClose, items }: Props) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/40 p-4">
       <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl">
         <div className="flex items-center justify-between">
-          <h2 className="text-[14px] font-semibold text-[#1F2937]">Mensagem para o Time de Vendas</h2>
+          <h2 className="text-[16px] font-semibold text-[#1F2937]">Mensagem para o Time de Vendas</h2>
           <button onClick={onClose} className="rounded-lg p-1 text-ink-500 hover:bg-surface">
             <X size={18} />
           </button>
         </div>
 
-        <label className="mt-3 block text-[10px] font-medium text-[#94A3B8]">Mensagem</label>
+        <label className="mt-3 block text-[11px] font-medium text-[#94A3B8]">Mensagem</label>
         <textarea
           readOnly
           value={message.body}
           rows={14}
-          className="mt-1 w-full rounded-lg border border-line bg-surface px-3 py-2 text-[11px] leading-relaxed text-[#1F2937]"
+          className="mt-1 w-full rounded-lg border border-line bg-surface px-3 py-2 text-[12px] leading-relaxed text-[#1F2937]"
         />
 
         <div className="mt-4 grid grid-cols-3 gap-2">
           <button
             onClick={handleCopy}
-            className="flex items-center justify-center gap-1.5 rounded-lg border border-line py-2 text-[11px] font-medium text-ink-700 hover:bg-surface"
+            className="flex items-center justify-center gap-1.5 rounded-lg border border-line py-2 text-[12px] font-medium text-ink-700 hover:bg-surface"
           >
             {copied ? <Check size={14} className="text-good" /> : <Copy size={14} />}
-            {copied ? "Copiado!" : "Copiar texto"}
+            {copied ? "Copiado!" : "Copiar"}
           </button>
           <button
             onClick={handleOpenWhatsApp}
-            className="flex items-center justify-center gap-1.5 rounded-lg bg-good py-2 text-[11px] font-semibold text-white hover:opacity-90"
+            className="flex items-center justify-center gap-1.5 rounded-lg bg-good py-2 text-[12px] font-semibold text-white hover:opacity-90"
           >
             <MessageCircle size={14} />
             WhatsApp
           </button>
           <button
             onClick={handleOpenEmail}
-            className="flex items-center justify-center gap-1.5 rounded-lg bg-accent py-2 text-[11px] font-semibold text-white hover:bg-accent-dark"
+            className="flex items-center justify-center gap-1.5 rounded-lg bg-accent py-2 text-[12px] font-semibold text-white hover:bg-accent-dark"
           >
             <Mail size={14} />
             E-mail
