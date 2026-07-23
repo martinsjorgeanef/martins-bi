@@ -20,13 +20,13 @@ function Card({
   accent: string;
 }) {
   return (
-    <div className="rounded-lg border border-line bg-white p-3 shadow-card">
+    <div className="rounded-xl bg-white p-4 shadow-card">
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-medium uppercase tracking-wide text-ink-600">{label}</span>
-        <div className={`rounded-md p-1 ${accent}`}>{icon}</div>
+        <span className="text-[12px] font-medium uppercase tracking-wide text-ink-500">{label}</span>
+        <div className={`rounded-lg p-1.5 ${accent}`}>{icon}</div>
       </div>
-      <div className="mt-1 font-display text-lg font-semibold text-ink-950 tabular-nums">{value}</div>
-      {sub && <div className="mt-0.5 text-[11px] text-ink-600">{sub}</div>}
+      <div className="mt-2 text-[22px] font-bold tabular-nums text-ink-950">{value}</div>
+      {sub && <div className="mt-0.5 text-[12px] text-ink-500">{sub}</div>}
     </div>
   );
 }
@@ -34,41 +34,39 @@ function Card({
 export function KpiCards({ stats, loading }: Props) {
   if (loading || !stats) {
     return (
-      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="h-[72px] animate-pulse rounded-lg border border-line bg-white" />
+          <div key={i} className="h-[86px] animate-pulse rounded-xl bg-white shadow-card" />
         ))}
       </div>
     );
   }
 
-  const pctMatched = stats.totalProducts > 0 ? (stats.matchedProducts / stats.totalProducts) * 100 : 0;
-
   return (
-    <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       <Card
-        icon={<Package size={13} className="text-accent" />}
-        label="Produtos monitorados"
-        value={stats.totalProducts.toLocaleString("pt-BR")}
-        sub={`${stats.matchedProducts.toLocaleString("pt-BR")} com dados (${pctMatched.toFixed(0)}%)`}
+        icon={<Package size={14} className="text-accent" />}
+        label="Monitorados"
+        value={stats.matchedProducts.toLocaleString("pt-BR")}
+        sub="Itens com comparação ativa"
         accent="bg-accent/10"
       />
       <Card
-        icon={<TrendingUp size={13} className="text-good" />}
+        icon={<TrendingUp size={14} className="text-good" />}
         label="Competitivos"
         value={stats.competitive.toLocaleString("pt-BR")}
-        sub={stats.matchedProducts > 0 ? `${((stats.competitive / stats.matchedProducts) * 100).toFixed(0)}% do comparável` : undefined}
+        sub={stats.matchedProducts > 0 ? `${((stats.competitive / stats.matchedProducts) * 100).toFixed(0)}%` : undefined}
         accent="bg-good-bg"
       />
       <Card
-        icon={<AlertTriangle size={13} className="text-warn" />}
+        icon={<AlertTriangle size={14} className="text-warn" />}
         label="Negociação pontual"
         value={stats.attention.toLocaleString("pt-BR")}
         sub="Vantagem abaixo do limite"
         accent="bg-warn-bg"
       />
       <Card
-        icon={<TrendingDown size={13} className="text-bad" />}
+        icon={<TrendingDown size={14} className="text-bad" />}
         label="Em desvantagem"
         value={stats.disadvantage.toLocaleString("pt-BR")}
         sub="Martins mais caro"
