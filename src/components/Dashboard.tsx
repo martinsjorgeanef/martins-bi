@@ -206,6 +206,20 @@ export function Dashboard() {
 
         <PriorityVendorCard industry={industries[0]} />
 
+        <Link
+          href="/vendas"
+          className="flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-card transition hover:shadow-md"
+        >
+          <div className="flex items-center gap-2">
+            <Megaphone size={14} className="text-good" />
+            <span className="text-[11px] font-medium text-[#1F2937]">
+              Divulgar oportunidades para o Time de Vendas
+            </span>
+          </div>
+        </Link>
+
+        <OpportunitiesInsights categories={categories} />
+
         <OpportunitiesInsights categories={categories} />
 
         {stats ? <TopDisadvantageChart data={stats.topDisadvantage} /> : null}
