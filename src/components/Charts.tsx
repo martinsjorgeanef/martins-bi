@@ -75,7 +75,10 @@ export function TopDisadvantageChart({ data }: { data: DisadvantageItem[] }) {
               <div className="truncate text-[13px] text-ink-950" title={d.description}>
                 {d.description}
               </div>
-              {d.category ? <div className="truncate text-[11px] text-ink-500">{d.category}</div> : null}
+              <div className="flex gap-2 text-[11px] text-ink-500">
+                <span className="font-mono">{d.ean}</span>
+                {d.category ? <span className="truncate">{d.category}</span> : null}
+              </div>
             </div>
             <span className="shrink-0 text-[13px] font-bold text-bad">{d.diffPct}%</span>
           </div>
