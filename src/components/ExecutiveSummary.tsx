@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Mail } from "lucide-react";
 import { CategoryRow, IndustryRow } from "@/lib/types";
-import { buildComprasEmail } from "@/lib/emailBuilder";
 import { EmailComprasModal } from "./EmailComprasModal";
 
 interface StatsLike {
@@ -28,8 +27,6 @@ export function ExecutiveSummary({ stats, industries, categories }: Props) {
   const pctDisadvantage = Math.round((stats.disadvantage / stats.matchedProducts) * 100);
   const industriaAtiva = industries[0];
   const priorityCategories = categories.filter((c) => c.priority !== "Baixa").slice(0, 3);
-
-  const email = buildComprasEmail(stats, categories, industries);
 
   const recommendationParts: string[] = [];
   if (stats.disadvantage > 0) recommendationParts.push("priorizar a negociação dos itens em desvantagem");
@@ -91,7 +88,12 @@ export function ExecutiveSummary({ stats, industries, categories }: Props) {
         <strong>Ação Recomendada:</strong> {recommendation}
       </p>
 
-      <EmailComprasModal open={emailOpen} onClose={() => setEmailOpen(false)} subject={email.subject} body={email.body} />
+      <EmailComprasModal
+        open={emailOpen}
+        onClose={() => setEmailOpen(false)}
+        categories={categories}
+        industry={industriaAtiva}
+      />
     </div>
   );
 }
