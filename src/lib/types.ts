@@ -15,9 +15,6 @@ export interface ProductRow {
   martinsUpdatedAt: string;
   requiredDiscountPct?: number;
 }
-  simulatedStatus?: CompetitivenessStatus;
-  simulatedDiffPct?: number;
-}
 
 export interface DashboardStats {
   totalProducts: number;
@@ -57,3 +54,4 @@ export interface CategoryRow {
   summary: string;
   avgDisadvantagePct: number | null;
 }
+
