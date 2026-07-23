@@ -84,16 +84,17 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
   return (
     <div className="rounded-lg border border-line bg-white shadow-card">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1270px] border-collapse">
+        <table className="w-full min-w-[1360px] border-collapse">
           <colgroup>
             <col style={{ width: EAN_WIDTH }} />
-            <col style={{ width: 380 }} />
-            <col style={{ width: 220 }} />
-            <col style={{ width: 110 }} />
-            <col style={{ width: 130 }} />
-            <col style={{ width: 110 }} />
-            <col style={{ width: 90 }} />
+            <col style={{ width: 340 }} />
+            <col style={{ width: 200 }} />
+            <col style={{ width: 105 }} />
+            <col style={{ width: 120 }} />
             <col style={{ width: 100 }} />
+            <col style={{ width: 85 }} />
+            <col style={{ width: 95 }} />
+            <col style={{ width: 110 }} />
           </colgroup>
           <thead className="border-b border-line" style={{ background: HEADER_BG }}>
             <tr>
@@ -120,6 +121,12 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
               >
                 Status
               </th>
+              <th
+                className="whitespace-nowrap px-3 py-3 text-center text-[13px] font-semibold uppercase tracking-wide"
+                style={{ color: HEADER_TEXT }}
+              >
+                Simulacao
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -127,7 +134,7 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
               ? Array.from({ length: 10 }).map(function (_, i) {
                   return (
                     <tr key={i} className="border-b border-line/60">
-                      <td colSpan={8} className="px-3 py-2">
+                      <td colSpan={9} className="px-3 py-2">
                         <div className="h-3 w-full animate-pulse rounded bg-line/60" />
                       </td>
                     </tr>
@@ -137,7 +144,7 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
 
             {!loading && rows.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-3 py-8 text-center text-[13px] text-ink-600">
+                <td colSpan={9} className="px-3 py-8 text-center text-[13px] text-ink-600">
                   Nenhum produto encontrado com esses filtros.
                 </td>
               </tr>
@@ -178,11 +185,19 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
                       </td>
                       <td className="whitespace-nowrap px-3 py-2 text-center">
                         <StatusBadge status={r.status} />
-                        {r.simulatedStatus && r.simulatedStatus !== r.status ? (
-                          <div className="mt-0.5 text-[10px] font-medium text-good">
-                            seta {r.simulatedStatus === "COMPETITIVO" ? "Competitivo" : "Negociacao pontual"} com desconto
-                          </div>
-                        ) : null}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2 text-center">
+                        {r.requiredDiscountPct !== undefined ? (
+                          <span
+                            title={"Aplicando " + (r.requiredDiscountPct * 100).toFixed(1).replace(".", ",") + "% de desconto, este item torna-se competitivo."}
+                            className="inline-flex items-center gap-1 rounded-full bg-surface px-2 py-0.5 text-[11px] font-medium text-[#374151]"
+                          >
+                            {r.requiredDiscountPct * 100 <= 2 ? "🟢" : r.requiredDiscountPct * 100 <= 5 ? "🟡" : "🔴"}
+                            {" Desc. " + (r.requiredDiscountPct * 100).toFixed(1).replace(".", ",") + "%"}
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-ink-500">-</span>
+                        )}
                       </td>
                     </tr>
                   );
