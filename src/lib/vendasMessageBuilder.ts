@@ -1,46 +1,76 @@
 import { DisadvantageItem } from "@/components/Charts";
+import { cleanProductName } from "./productNameCleaner";
+
+function money(v: number) {
+  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+var CATEGORY_EMOJI: Record<string, string> = {
+  "HIGIENE BUCAL": "🦷",
+  SABONETE: "🧼",
+  SABONETES: "🧼",
+  "CUIDADO COM O CABELO": "🧴",
+  "HIGIENE INFANTIL": "👶",
+  "CUIDADO COM O SOL": "☀️"
+};
+
+function emojiFor(category: string): string {
+  var key = category.toUpperCase();
+  return CATEGORY_EMOJI[key] || "🛍️";
+}
+
+interface VariantLine {
+  weight: string | null;
+  price: number | undefined;
+}
 
 export function buildVendasMessage(items: DisadvantageItem[]) {
-  const subject = "Oportunidades Comerciais - Vantagem Competitiva Martins";
+  var subject = "Oportunidades Comerciais - Vantagem Competitiva Martins";
 
-  const byCategory = new Map<string, DisadvantageItem[]>();
+  var byCategory = new Map<string, Map<string, VariantLine[]>>();
+
   items.forEach(function (it) {
-    const cat = it.category ? it.category : "Sem categoria";
-    const list = byCategory.get(cat) || [];
-    list.push(it);
-    byCategory.set(cat, list);
+    var category = it.category ? it.category : "Sem categoria";
+    var cleaned = cleanProductName(it.description);
+
+    if (!byCategory.has(category)) byCategory.set(category, new Map());
+    var itemMap = byCategory.get(category) as Map<string, VariantLine[]>;
+
+    if (!itemMap.has(cleaned.itemName)) itemMap.set(cleaned.itemName, []);
+    var arr = itemMap.get(cleaned.itemName) as VariantLine[];
+    arr.push({ weight: cleaned.weight, price: it.martinsPrice });
   });
 
-  const categoryNames = Array.from(byCategory.keys()).sort(function (a, b) {
-    return (byCategory.get(b) || []).length - (byCategory.get(a) || []).length;
+  var categoryNames = Array.from(byCategory.keys()).sort(function (a, b) {
+    var mapA = byCategory.get(a) as Map<string, VariantLine[]>;
+    var mapB = byCategory.get(b) as Map<string, VariantLine[]>;
+    return mapB.size - mapA.size;
   });
 
-  const topCategories = categoryNames.slice(0, 3);
-
-  const lines: string[] = [];
-  lines.push("Pessoal, boa tarde!");
+  var lines: string[] = [];
+  lines.push("🔥 OPORTUNIDADES DO DIA 🔥");
   lines.push("");
-  lines.push("Segue a relacao das principais oportunidades comerciais identificadas em nossa analise de competitividade.");
-  lines.push("");
-  lines.push("Nesta atualizacao, as categorias com maior vantagem frente aos concorrentes sao:");
-  lines.push("");
-  topCategories.forEach(function (cat) {
-    lines.push("- " + cat);
-  });
-  lines.push("");
-  lines.push("Priorizem essas categorias durante as visitas, pois apresentam excelente posicionamento de preco e aumentam nossas chances de conversao.");
-  lines.push("");
-  lines.push("Abaixo segue a relacao dos principais produtos e seus respectivos precos Martins para apoiar a negociacao:");
+  lines.push("✅ Nota RJ");
+  lines.push("✅ Prazo 45D");
   lines.push("");
 
-  categoryNames.forEach(function (cat) {
-    const catItems = byCategory.get(cat) || [];
-    lines.push(cat + ":");
-    catItems.forEach(function (it) {
-      const priceText = it.martinsPrice !== undefined
-        ? it.martinsPrice.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
-        : "-";
-      lines.push("- " + it.description + " - " + priceText);
+  categoryNames.forEach(function (category) {
+    var itemMap = byCategory.get(category) as Map<string, VariantLine[]>;
+    lines.push(emojiFor(category) + " " + category.toUpperCase());
+    lines.push("");
+
+    var itemNames = Array.from(itemMap.keys()).sort();
+    itemNames.forEach(function (itemName) {
+      var variants = itemMap.get(itemName) as VariantLine[];
+      lines.push(itemName);
+      variants.forEach(function (v) {
+        var priceText = v.price !== undefined ? money(v.price) : "-";
+        if (v.weight) {
+          lines.push("• " + v.weight + " | " + priceText);
+        } else {
+          lines.push("• " + priceText);
+        }
+      });
     });
     lines.push("");
   });
