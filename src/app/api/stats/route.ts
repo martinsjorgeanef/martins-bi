@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { calcDiffPct, calcStatus } from "@/lib/calculations";
+import { calcDiffPct, calcStatus, calcRequiredDiscountPct } from "@/lib/calculations";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
