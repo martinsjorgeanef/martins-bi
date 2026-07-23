@@ -6,6 +6,7 @@ import { ExecutiveSummary } from "./ExecutiveSummary";
 import { PriorityActions } from "./PriorityActions";
 import { PriorityVendorCard } from "./PriorityVendorCard";
 import { OpportunitiesInsights } from "./OpportunitiesInsights";
+import { RecoveryPotentialCard } from "./RecoveryPotentialCard";
 import { TopDisadvantageChart } from "./Charts";
 import { CategoryTable } from "./CategoryTable";
 import { Filters } from "./Filters";
@@ -20,6 +21,15 @@ interface StatsResponse extends DashboardStats {
   thresholdPct: number;
   statusDistribution: { name: string; value: number; key: string }[];
   topDisadvantage: { ean: string; description: string; category: string | null; diffPct: number }[];
+  recoveryPotential: {
+    avgDiscountPct: number;
+    itemsRecoverable: number;
+    oldCompetitivePct: number;
+    newCompetitivePct: number;
+    green: number;
+    yellow: number;
+    red: number;
+  } | null;
 }
 
 export function Dashboard() {
@@ -216,6 +226,8 @@ export function Dashboard() {
 
         <KpiCards stats={stats} loading={statsLoading} />
 
+        {!execMode && stats ? <RecoveryPotentialCard recovery={stats.recoveryPotential} /> : null}
+
         {!execMode && stats ? <ExecutiveSummary stats={stats} industries={industries} categories={categories} /> : null}
 
         {!execMode && stats ? (
@@ -250,49 +262,3 @@ export function Dashboard() {
         {!execMode ? (
           <div className="rounded-xl bg-white p-4 shadow-card">
             <h3 className="text-[12px] font-semibold text-[#1F2937]">Categorias</h3>
-            <p className="mt-0.5 text-[11px] text-[#94A3B8]">Da pior para a melhor posicionamento de mercado</p>
-            <div className="mt-3">
-              <CategoryTable categories={categories} />
-            </div>
-          </div>
-        ) : null}
-
-        <Filters
-          search={search}
-          onSearch={setSearch}
-          category={category}
-          onCategory={setCategory}
-          status={status}
-          onStatus={setStatus}
-          competitor={competitor}
-          onCompetitor={setCompetitor}
-          supplier={supplier}
-          onSupplier={setSupplier}
-          categories={stats ? stats.categories : []}
-          competitorNames={stats ? stats.competitorNames : []}
-          supplierNames={stats ? stats.supplierNames : []}
-          threshold={threshold}
-          onThreshold={handleThresholdChange}
-        />
-
-        <div className="flex justify-end">
-          <ExportButtons fetchAllRows={fetchAllFilteredRows} />
-        </div>
-
-        <ProductsTable
-          rows={rows}
-          loading={rowsLoading}
-          page={page}
-          totalPages={totalPages}
-          total={total}
-          onPage={setPage}
-          sortBy={sortBy}
-          sortDir={sortDir}
-          onSort={handleSort}
-        />
-      </main>
-
-      <UploadPanel open={uploadOpen} onClose={function () { setUploadOpen(false); }} onSuccess={handleUploadSuccess} />
-    </div>
-  );
-}
