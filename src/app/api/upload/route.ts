@@ -71,6 +71,7 @@ export async function POST(req: NextRequest) {
 
       // "Visão por indústria" sempre mostra só a última indústria enviada: apaga tudo antes de gravar a nova
       await prisma.competitorCatalogItem.deleteMany({});
+      await prisma.competitorPrice.deleteMany({});
 
       for (const row of rows) {
         await prisma.competitorCatalogItem.create({
