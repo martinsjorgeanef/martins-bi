@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import { KpiCards } from "./KpiCards";
 import { StatusDistributionChart, TopDisadvantageChart } from "./Charts";
 import { Filters } from "./Filters";
@@ -9,7 +10,7 @@ import { IndustriesTable } from "./IndustriesTable";
 import { UploadPanel } from "./UploadPanel";
 import { ExportButtons } from "./ExportButtons";
 import { DashboardStats, ProductRow, IndustryRow } from "@/lib/types";
-import { UploadCloud, BarChart3 } from "lucide-react";
+import { UploadCloud, BarChart3, ClipboardList, ChevronRight } from "lucide-react";
 
 interface StatsResponse extends DashboardStats {
   thresholdPct: number;
@@ -188,6 +189,19 @@ export function Dashboard() {
         )}
 
         <KpiCards stats={stats} loading={statsLoading} />
+
+        <Link
+          href="/analise"
+          className="flex items-center justify-between rounded-lg border border-accent/30 bg-accent/5 px-3 py-2.5 transition hover:bg-accent/10"
+        >
+          <div className="flex items-center gap-2">
+            <ClipboardList size={16} className="text-accent" />
+            <span className="text-xs font-medium text-ink-950">
+              Ver análise de competitividade e pedido de apoio a Compras
+            </span>
+          </div>
+          <ChevronRight size={14} className="text-accent" />
+        </Link>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
           <div className="lg:col-span-2">
