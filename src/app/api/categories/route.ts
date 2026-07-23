@@ -11,6 +11,7 @@ interface CategoryAgg {
   competitive: number;
   attention: number;
   disadvantage: number;
+  disadvantageDiffSum: number;
 }
 
 function summaryFor(pct: number): string {
@@ -30,7 +31,8 @@ export async function GET() {
   for (const p of products) {
     if (p.competitorPrices.length === 0) continue;
     const category = p.category || "Sem categoria";
-    const entry = map.get(category) ?? { category, monitored: 0, competitive: 0, attention: 0, disadvantage: 0 };
+    const entry =
+      map.get(category) ?? { category, monitored: 0, competitive: 0, attention: 0, disadvantage: 0, disadvantageDiffSum: 0 };
     entry.monitored++;
 
     const best = p.competitorPrices.reduce((min, c) => (c.price < min.price ? c : min));
@@ -39,7 +41,10 @@ export async function GET() {
 
     if (status === "COMPETITIVO") entry.competitive++;
     else if (status === "ATENCAO") entry.attention++;
-    else entry.disadvantage++;
+    else {
+      entry.disadvantage++;
+      entry.disadvantageDiffSum += -diffPct;
+    }
 
     map.set(category, entry);
   }
@@ -47,11 +52,18 @@ export async function GET() {
   const categories = Array.from(map.values())
     .map((c) => {
       const competitivePct = c.monitored > 0 ? Math.round((c.competitive / c.monitored) * 1000) / 10 : 0;
+      const avgDisadvantagePct =
+        c.disadvantage > 0 ? Math.round((c.disadvantageDiffSum / c.disadvantage) * 1000) / 10 : null;
       return {
-        ...c,
+        category: c.category,
+        monitored: c.monitored,
+        competitive: c.competitive,
+        attention: c.attention,
+        disadvantage: c.disadvantage,
         competitivePct,
         priority: priorityForCompetitivePct(competitivePct),
-        summary: summaryFor(competitivePct)
+        summary: summaryFor(competitivePct),
+        avgDisadvantagePct
       };
     })
     .sort((a, b) => a.competitivePct - b.competitivePct);
