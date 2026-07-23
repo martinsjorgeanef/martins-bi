@@ -70,8 +70,7 @@ export async function POST(req: NextRequest) {
       skipped = parseSkipped;
 
       // Cada comprador atua com uma indústria por vez: cada novo envio de concorrente
-      // substitui COMPLETAMENTE o que existia antes, tanto na "Visão por indústria"
-      // quanto no painel principal (tabela de produtos, gráficos, KPIs).
+      // substitui COMPLETAMENTE o que existia antes (não acumula outras indústrias).
       await prisma.competitorCatalogItem.deleteMany({});
       await prisma.competitorPrice.deleteMany({});
 
