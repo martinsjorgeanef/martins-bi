@@ -13,7 +13,7 @@ import { ProductsTable } from "./ProductsTable";
 import { UploadPanel } from "./UploadPanel";
 import { ExportButtons } from "./ExportButtons";
 import { DashboardStats, ProductRow, IndustryRow, CategoryRow } from "@/lib/types";
-import { UploadCloud, BarChart3, Megaphone } from "lucide-react";
+import { UploadCloud, BarChart3, Megaphone, Maximize2, Minimize2 } from "lucide-react";
 import Link from "next/link";
 
 interface StatsResponse extends DashboardStats {
@@ -46,6 +46,7 @@ export function Dashboard() {
   const [threshold, setThreshold] = useState(5);
 
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [execMode, setExecMode] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(function () { setDebouncedSearch(search); }, 350);
@@ -67,6 +68,7 @@ export function Dashboard() {
 
   const loadRows = useCallback(async () => {
     setRowsLoading(true);
+    const pageSize = execMode ? "20" : "50";
     const params = new URLSearchParams({
       search: debouncedSearch,
       category: category,
@@ -74,7 +76,7 @@ export function Dashboard() {
       competitor: competitor,
       supplier: supplier,
       page: String(page),
-      pageSize: "50",
+      pageSize: pageSize,
       sortBy: sortBy,
       sortDir: sortDir
     });
@@ -84,7 +86,7 @@ export function Dashboard() {
     setTotal(data.total);
     setTotalPages(data.totalPages);
     setRowsLoading(false);
-  }, [debouncedSearch, category, status, competitor, supplier, page, sortBy, sortDir]);
+  }, [debouncedSearch, category, status, competitor, supplier, page, sortBy, sortDir, execMode]);
 
   const loadIndustries = useCallback(async () => {
     const res = await fetch("/api/industries");
@@ -152,33 +154,54 @@ export function Dashboard() {
 
   return (
     <div className="min-h-screen bg-surface">
-      <header className="sticky top-0 z-30 border-b border-line bg-ink-950">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 lg:px-6">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
-              <BarChart3 size={18} className="text-white" />
+      {!execMode ? (
+        <header className="sticky top-0 z-30 border-b border-line bg-ink-950">
+          <div className="mx-auto flex max-w-[1800px] w-[95%] items-center justify-between py-3">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
+                <BarChart3 size={18} className="text-white" />
+              </div>
+              <div>
+                <h1 className="text-[13px] font-semibold leading-tight text-white">Painel de Competitividade</h1>
+                <p className="text-[9px] leading-tight text-white/50">Martins x Mercado</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-[13px] font-semibold leading-tight text-white">Painel de Competitividade</h1>
-              <p className="text-[9px] leading-tight text-white/50">Martins x Mercado</p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={function () { setExecMode(true); }}
+                className="flex items-center gap-1.5 rounded-lg border border-white/20 px-3 py-2 text-[11px] font-medium text-white/80 hover:bg-white/10"
+              >
+                <Maximize2 size={13} />
+                <span className="hidden sm:inline">Modo Executivo</span>
+              </button>
+              <button
+                onClick={function () { setUploadOpen(true); }}
+                className="flex items-center gap-2 rounded-lg bg-accent px-3.5 py-2 text-[11px] font-medium text-white transition hover:bg-accent-dark"
+              >
+                <UploadCloud size={14} />
+                <span className="hidden sm:inline">Enviar planilha</span>
+              </button>
             </div>
           </div>
+        </header>
+      ) : (
+        <div className="sticky top-0 z-30 flex justify-end border-b border-line bg-white/90 px-3 py-1.5 backdrop-blur">
           <button
-            onClick={function () { setUploadOpen(true); }}
-            className="flex items-center gap-2 rounded-lg bg-accent px-3.5 py-2 text-[11px] font-medium text-white transition hover:bg-accent-dark"
+            onClick={function () { setExecMode(false); }}
+            className="flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1 text-[11px] font-medium text-ink-700 hover:bg-surface"
           >
-            <UploadCloud size={14} />
-            <span className="hidden sm:inline">Enviar planilha</span>
+            <Minimize2 size={12} />
+            Sair do Modo Executivo
           </button>
         </div>
-      </header>
+      )}
 
-      <main className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-6 lg:px-6">
+      <main className={"mx-auto flex max-w-[1800px] w-[95%] flex-col " + (execMode ? "gap-2 py-3" : "gap-4 py-6")}>
         {!statsLoading && stats && stats.matchedProducts === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-xl bg-white p-10 text-center shadow-card">
             <UploadCloud size={26} className="text-accent" />
             <h2 className="text-[12px] font-semibold text-[#1F2937]">Nenhum dado carregado ainda</h2>
-            <p className="max-w-md text-[9px] text-[#6B7280]">
+            <p className="max-w-md text-[11px] text-[#6B7280]">
               Envie primeiro a planilha de precos da Martins e depois a planilha de um concorrente para comecar a
               comparar precos.
             </p>
@@ -193,9 +216,9 @@ export function Dashboard() {
 
         <KpiCards stats={stats} loading={statsLoading} />
 
-        {stats ? <ExecutiveSummary stats={stats} industries={industries} categories={categories} /> : null}
+        {!execMode && stats ? <ExecutiveSummary stats={stats} industries={industries} categories={categories} /> : null}
 
-        {stats ? (
+        {!execMode && stats ? (
           <PriorityActions
             competitive={stats.competitive}
             disadvantage={stats.disadvantage}
@@ -204,31 +227,35 @@ export function Dashboard() {
           />
         ) : null}
 
-        <PriorityVendorCard industry={industries[0]} />
+        {!execMode ? <PriorityVendorCard industry={industries[0]} /> : null}
 
-        <Link
-          href="/vendas"
-          className="flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-card transition hover:shadow-md"
-        >
-          <div className="flex items-center gap-2">
-            <Megaphone size={14} className="text-good" />
-            <span className="text-[11px] font-medium text-[#1F2937]">
-              Divulgar oportunidades para o Time de Vendas
-            </span>
+        {!execMode ? (
+          <Link
+            href="/vendas"
+            className="flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-card transition hover:shadow-md"
+          >
+            <div className="flex items-center gap-2">
+              <Megaphone size={14} className="text-good" />
+              <span className="text-[11px] font-medium text-[#1F2937]">
+                Divulgar oportunidades para o Time de Vendas
+              </span>
+            </div>
+          </Link>
+        ) : null}
+
+        {!execMode ? <OpportunitiesInsights categories={categories} /> : null}
+
+        {!execMode && stats ? <TopDisadvantageChart data={stats.topDisadvantage} /> : null}
+
+        {!execMode ? (
+          <div className="rounded-xl bg-white p-4 shadow-card">
+            <h3 className="text-[12px] font-semibold text-[#1F2937]">Categorias</h3>
+            <p className="mt-0.5 text-[11px] text-[#94A3B8]">Da pior para a melhor posicionamento de mercado</p>
+            <div className="mt-3">
+              <CategoryTable categories={categories} />
+            </div>
           </div>
-        </Link>
-
-        <OpportunitiesInsights categories={categories} />
-
-        {stats ? <TopDisadvantageChart data={stats.topDisadvantage} /> : null}
-
-        <div className="rounded-xl bg-white p-4 shadow-card">
-          <h3 className="text-[12px] font-semibold text-[#1F2937]">Categorias</h3>
-          <p className="mt-0.5 text-[8px] text-[#94A3B8]">Da pior para a melhor posicionamento de mercado</p>
-          <div className="mt-3">
-            <CategoryTable categories={categories} />
-          </div>
-        </div>
+        ) : null}
 
         <Filters
           search={search}
