@@ -86,6 +86,12 @@ export async function GET(req: NextRequest) {
 
   let rows = products.map((p) => buildRow(p, thresholdFraction));
 
+  // Por padrão, mostra só produtos com comparação de concorrente ativa (indústria em análise agora).
+  // Só mostra "Sem dados de mercado" se o usuário pedir isso explicitamente no filtro de Status.
+  if (status !== "SEM_DADOS") {
+    rows = rows.filter((r) => r.status !== "SEM_DADOS");
+  }
+
   if (search) {
     rows = rows.filter(
       (r) => r.ean.includes(search) || r.description.toLowerCase().includes(search)
