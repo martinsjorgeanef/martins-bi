@@ -1,10 +1,10 @@
 import { AppShell } from "@/components/AppShell";
-import { DashboardHome } from "@/components/DashboardHome";
+import { VendasReport } from "@/components/VendasReport";
 
-export default function Home() {
+export default function VendasPage() {
   return (
     <AppShell>
-      <DashboardHome />
+      <VendasReport />
     </AppShell>
   );
 }
