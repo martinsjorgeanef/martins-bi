@@ -3,28 +3,28 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
 export async function GET() {
-  const settings = await prisma.settings.upsert({
-    where: { id: "singleton" },
-    create: { id: "singleton", thresholdPct: 5 },
-    update: {}
+  const settings = await prisma.settings.findUnique({ where: { id: "singleton" } });
+  return NextResponse.json({
+    thresholdPct: settings ? settings.thresholdPct : 5,
+    activeCompetitors: settings ? settings.activeCompetitors : ""
   });
-  return NextResponse.json(settings);
 }
 
 export async function PUT(req: NextRequest) {
   const body = await req.json();
-  const thresholdPct = Number(body.thresholdPct);
+  const existing = await prisma.settings.findUnique({ where: { id: "singleton" } });
 
-  if (!Number.isFinite(thresholdPct) || thresholdPct < 0 || thresholdPct > 100) {
-    return NextResponse.json({ error: "Limite inválido. Use um valor entre 0 e 100." }, { status: 400 });
-  }
+  const thresholdPct = body.thresholdPct !== undefined ? body.thresholdPct : existing ? existing.thresholdPct : 5;
+  const activeCompetitors =
+    body.activeCompetitors !== undefined ? body.activeCompetitors : existing ? existing.activeCompetitors : "";
 
-  const settings = await prisma.settings.upsert({
+  const updated = await prisma.settings.upsert({
     where: { id: "singleton" },
-    create: { id: "singleton", thresholdPct },
-    update: { thresholdPct }
+    create: { id: "singleton", thresholdPct: thresholdPct, activeCompetitors: activeCompetitors },
+    update: { thresholdPct: thresholdPct, activeCompetitors: activeCompetitors }
   });
 
-  return NextResponse.json(settings);
+  return NextResponse.json({ thresholdPct: updated.thresholdPct, activeCompetitors: updated.activeCompetitors });
 }
