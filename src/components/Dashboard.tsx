@@ -281,13 +281,18 @@ export function Dashboard() {
         {!execMode ? (
           <Link
             href="/vendas"
-            className="flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-card transition hover:shadow-md"
+            className="block rounded-xl bg-good/[0.06] p-5 shadow-card transition hover:shadow-md"
           >
             <div className="flex items-center gap-2">
-              <Megaphone size={14} className="text-good" />
-              <span className="text-[11px] font-medium text-[#1F2937]">
-                Divulgar oportunidades para o Time de Vendas
-              </span>
+              <Megaphone size={22} className="text-good" />
+              <h3 className="text-[18px] font-bold text-[#1F2937]">Divulgar oportunidades para o Time de Vendas</h3>
+            </div>
+            <p className="mt-1.5 text-[13px] text-[#6B7280]">
+              Compartilhe automaticamente os produtos mais competitivos desta analise com toda a equipe comercial.
+            </p>
+            <div className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-good py-2.5 text-[14px] font-bold text-white">
+              <MessageCircle size={16} />
+              GERAR MENSAGEM
             </div>
           </Link>
         ) : null}
