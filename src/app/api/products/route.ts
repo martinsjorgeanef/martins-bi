@@ -21,13 +21,18 @@ function buildRow(
     martinsUpdatedAt: Date;
     competitorPrices: { competitorName: string; price: number }[];
   },
-  thresholdFraction: number
+  thresholdFraction: number,
+  selectedCompetitors: string[] | null
 ): ProductRow {
-  const competitors = product.competitorPrices.map(function (c) {
+  var allCompetitors = product.competitorPrices.map(function (c) {
     return { name: c.competitorName, price: c.price };
   });
 
-  if (competitors.length === 0) {
+  var consideredCompetitors = selectedCompetitors
+    ? allCompetitors.filter(function (c) { return selectedCompetitors.indexOf(c.name) !== -1; })
+    : allCompetitors;
+
+  if (consideredCompetitors.length === 0) {
     return {
       id: product.id,
       ean: product.ean,
@@ -39,12 +44,12 @@ function buildRow(
       bestCompetitor: null,
       diffPct: null,
       status: "SEM_DADOS",
-      competitors: competitors,
+      competitors: allCompetitors,
       martinsUpdatedAt: product.martinsUpdatedAt.toISOString()
     };
   }
 
-  const best = competitors.reduce(function (min, c) {
+  const best = consideredCompetitors.reduce(function (min, c) {
     return c.price < min.price ? c : min;
   });
   const diffPct = calcDiffPct(product.martinsPrice, best.price);
@@ -61,7 +66,7 @@ function buildRow(
     bestCompetitor: best.name,
     diffPct: diffPct,
     status: status,
-    competitors: competitors,
+    competitors: allCompetitors,
     martinsUpdatedAt: product.martinsUpdatedAt.toISOString()
   };
 
@@ -77,12 +82,16 @@ export async function GET(req: NextRequest) {
   const search = searchParams.get("search")?.trim().toLowerCase() || "";
   const category = searchParams.get("category") || "";
   const status = searchParams.get("status") || "";
-  const competitor = searchParams.get("competitor") || "";
+  const competitorsParam = searchParams.get("competitors") || "";
   const supplier = searchParams.get("supplier") || "";
   const sortBy = searchParams.get("sortBy") || "diffPct";
   const sortDir = searchParams.get("sortDir") === "asc" ? 1 : -1;
   const page = Math.max(1, Number(searchParams.get("page") || 1));
   const pageSize = Math.min(5000, Math.max(10, Number(searchParams.get("pageSize") || 50)));
+
+  const selectedCompetitors = competitorsParam
+    ? competitorsParam.split(",").map(function (s) { return s.trim(); }).filter(function (s) { return s.length > 0; })
+    : null;
 
   const thresholdFraction = await getThreshold();
 
@@ -92,13 +101,11 @@ export async function GET(req: NextRequest) {
   });
 
   let rows = products.map(function (p) {
-    return buildRow(p, thresholdFraction);
+    return buildRow(p, thresholdFraction, selectedCompetitors);
   });
 
   if (status !== "SEM_DADOS") {
-    rows = rows.filter(function (r) {
-      return r.status !== "SEM_DADOS";
-    });
+    rows = rows.filter(function (r) { return r.status !== "SEM_DADOS"; });
   }
 
   if (search) {
@@ -107,24 +114,13 @@ export async function GET(req: NextRequest) {
     });
   }
   if (category) {
-    rows = rows.filter(function (r) {
-      return r.category === category;
-    });
+    rows = rows.filter(function (r) { return r.category === category; });
   }
   if (status) {
-    rows = rows.filter(function (r) {
-      return r.status === status;
-    });
-  }
-  if (competitor) {
-    rows = rows.filter(function (r) {
-      return r.competitors.some(function (c) { return c.name === competitor; });
-    });
+    rows = rows.filter(function (r) { return r.status === status; });
   }
   if (supplier) {
-    rows = rows.filter(function (r) {
-      return r.supplier === supplier;
-    });
+    rows = rows.filter(function (r) { return r.supplier === supplier; });
   }
 
   rows.sort(function (a, b) {
