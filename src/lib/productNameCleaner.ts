@@ -6,57 +6,74 @@ export interface CleanedProduct {
   weight: string | null;
 }
 
-// Prefixo tecnico do cadastro -> tipo comercial do produto.
-// Adicione mais linhas aqui conforme aparecerem novos prefixos.
 var TYPE_DICTIONARY: [string, string][] = [
-  ["CR.DENT.", "Creme Dental"],
-  ["CR DENT", "Creme Dental"],
+  ["ENXAGUANTE BUCAL", "Enxaguante Bucal"],
   ["ENXAG.BUCAL", "Enxaguante Bucal"],
   ["ENX.B.", "Enxaguante Bucal"],
   ["ENX B", "Enxaguante Bucal"],
+  ["ESCOVA DENTAL", "Escova Dental"],
   ["ESC.DENT", "Escova Dental"],
   ["ESC.", "Escova Dental"],
-  ["SH.", "Shampoo"],
-  ["CONDIC.", "Condicionador"],
+  ["CREME DENTAL", "Creme Dental"],
+  ["CR.DENT.", "Creme Dental"],
+  ["CR DENT", "Creme Dental"],
+  ["SABONETE LIQUIDO", "Sabonete Liquido"],
   ["SAB.LIQ", "Sabonete Liquido"],
+  ["SABONETE", "Sabonete"],
   ["SAB.", "Sabonete"],
+  ["SHAMPOO", "Shampoo"],
+  ["SH.", "Shampoo"],
+  ["CONDICIONADOR", "Condicionador"],
+  ["CONDIC.", "Condicionador"],
+  ["DESODORANTE", "Desodorante"],
   ["DEOD.", "Desodorante"],
   ["DES.", "Desodorante"],
+  ["ABSORVENTE", "Absorvente"],
   ["ABS.", "Absorvente"],
+  ["FRALDA GERIATRICA", "Fralda Geriatrica"],
+  ["FRALDA", "Fralda"],
   ["FRD.", "Fralda"],
+  ["TOALHA UMEDECIDA", "Toalha Umedecida"],
   ["TOALHA UME", "Toalha Umedecida"]
 ];
 
-// Palavra-chave de linha reconhecida no restante do texto -> nome comercial padronizado.
-// Ordem importa: termos mais especificos primeiro. Adicione novas linhas aqui.
 var LINE_DICTIONARY: [string, string][] = [
   ["LUMINOUS WHITE", "Luminous White"],
   ["TOTAL PREV ATIV", "Total"],
   ["TOTAL PREVENCAO ATIVA", "Total"],
-  ["MAXIMA PROTECAO", "Máxima Proteção"],
-  ["MAX PROT", "Máxima Proteção"],
-  ["TRIPLA ACAO", "Tripla Ação"],
+  ["MAXIMA PROTECAO", "Maxima Protecao"],
+  ["MAX PROT", "Maxima Protecao"],
+  ["TRIPLA ACAO", "Tripla Acao"],
+  ["TRIPLA PROTECAO", "Tripla Protecao"],
+  ["SUPREME CARE", "Supreme Care"],
   ["PERIOGARD", "Periogard"],
   ["PLAX", "Plax"],
   ["SENSITIVE", "Sensitive"],
   ["NATURALS", "Naturals"]
 ];
 
-// Correcao de acentuacao para palavras soltas do restante da descricao.
-// Adicione novas palavras aqui conforme forem aparecendo sem acento.
 var WORD_FIXES: Record<string, string> = {
-  PROTECAO: "Proteção",
-  ACAO: "Ação",
-  ANTICARIES: "Anticáries",
-  ATICARIES: "Anticáries",
-  SAUDAVEL: "Saudável",
-  MAXIMA: "Máxima",
-  CARVAO: "Carvão",
+  PROTECAO: "Protecao",
+  ACAO: "Acao",
+  ANTICARIES: "Anticaries",
+  ATICARIES: "Anticaries",
+  SAUDAVEL: "Saudavel",
+  MAXIMA: "Maxima",
+  CARVAO: "Carvao",
   ORIG: "Original",
-  PREVENCAO: "Prevenção"
+  PREVENCAO: "Prevencao",
+  GERIATRICA: "Geriatrica"
 };
 
 var NOISE_WORDS = ["GTS", "CX", "UN", "UND", "LV", "PG"];
+
+function normalizeWord(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .trim();
+}
 
 function normalizeSpaces(text: string): string {
   return text.replace(/\s+/g, " ").trim();
@@ -86,13 +103,11 @@ function findWeights(text: string): { matches: WeightMatch[]; rest: string } {
   var rest = text;
   var m;
   while ((m = regex.exec(text)) !== null) {
+    var multiplier = m[1] ? m[1].toUpperCase().replace("X", "x") : "";
+    var value = m[2].replace(",", ".");
     var unit = m[3].toLowerCase();
-    matches.push({
-      multiplier: m[1] || null,
-      value: m[2].replace(",", "."),
-      unit: unit === "gr" ? "g" : unit,
-      raw: m[0]
-    });
+    var unitFinal = unit === "gr" ? "g" : unit;
+    matches.push({ multiplier: multiplier, value: value, unit: unitFinal, raw: m[0] });
     rest = rest.replace(m[0], " ");
   }
   return { matches: matches, rest: normalizeSpaces(rest) };
@@ -100,9 +115,7 @@ function findWeights(text: string): { matches: WeightMatch[]; rest: string } {
 
 function buildWeightLabel(matches: WeightMatch[]): string | null {
   if (matches.length === 0) return null;
-  if (matches.length === 1) {
-    return matches[0].value + matches[0].unit;
-  }
+  if (matches.length === 1) return matches[0].value + matches[0].unit;
   var parts = matches.map(function (m) {
     if (m.multiplier) return m.multiplier + "x" + m.value + m.unit;
     return m.value + m.unit;
@@ -122,7 +135,7 @@ function stripNoiseWords(text: string): string {
 }
 
 function fixWord(word: string): string {
-  var upper = word.toUpperCase();
+  var upper = normalizeWord(word);
   if (WORD_FIXES[upper]) return WORD_FIXES[upper];
   if (word.length === 0) return word;
   return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
@@ -131,10 +144,7 @@ function fixWord(word: string): string {
 function titleCaseWithFixes(text: string): string {
   var cleaned = normalizeSpaces(text.replace(/[.]/g, " "));
   if (cleaned.length === 0) return "";
-  return cleaned
-    .split(" ")
-    .map(fixWord)
-    .join(" ");
+  return cleaned.split(" ").map(fixWord).join(" ");
 }
 
 function detectLine(text: string): { linha: string | null; rest: string } {
@@ -150,19 +160,33 @@ function detectLine(text: string): { linha: string | null; rest: string } {
   return { linha: null, rest: text };
 }
 
-export function cleanProductName(rawDescription: string): CleanedProduct {
+function stripRedundantWords(words: string[], brand: string, categoryWords: string[]): string[] {
+  var brandNorm = normalizeWord(brand);
+  var categoryNorms = categoryWords.map(normalizeWord).filter(function (w) { return w.length >= 4; });
+
+  return words.filter(function (w) {
+    var norm = normalizeWord(w);
+    if (norm === brandNorm) return false;
+    if (categoryNorms.indexOf(norm) !== -1) return false;
+    return true;
+  });
+}
+
+export function cleanProductName(rawDescription: string, category?: string | null): CleanedProduct {
   var typeResult = stripTypePrefix(rawDescription);
   var working = stripNoiseWords(typeResult.rest);
 
   var weightResult = findWeights(working);
   working = stripNoiseWords(weightResult.rest);
 
-  var words = working.split(" ").filter(function (w) {
-    return w.length > 0;
-  });
+  var words = working.split(" ").filter(function (w) { return w.length > 0; });
   var brand = words.length > 0 ? fixWord(words[0]) : "Diversos";
-  var afterBrand = words.slice(1).join(" ");
+  var afterBrandWords = words.slice(1);
 
+  var categoryWords = category ? category.split(" ") : [];
+  afterBrandWords = stripRedundantWords(afterBrandWords, brand, categoryWords);
+
+  var afterBrand = afterBrandWords.join(" ");
   var lineResult = detectLine(afterBrand);
 
   var descriptor = titleCaseWithFixes(lineResult.rest);
