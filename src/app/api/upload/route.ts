@@ -100,17 +100,37 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      await prisma.competitorCatalogItem.deleteMany({});
-      await prisma.competitorPrice.deleteMany({});
+      // Substitui so os itens dessa industria+concorrente especifica.
+      // Outros concorrentes ja importados (DPC, Emefarma, etc.) continuam intactos,
+      // permitindo analisar varios concorrentes ao mesmo tempo.
+      const oldItems = await prisma.competitorCatalogItem.findMany({
+        where: { fornecedor: fornecedorField!, competitorName: sourceName! },
+        select: { ean: true }
+      });
+      const oldEans = oldItems.map(function (o) { return o.ean; });
+
+      if (oldEans.length > 0) {
+        const oldProducts = await prisma.product.findMany({
+          where: { ean: { in: oldEans } },
+          select: { id: true }
+        });
+        const oldProductIds = oldProducts.map(function (p) { return p.id; });
+        if (oldProductIds.length > 0) {
+          await prisma.competitorPrice.deleteMany({
+            where: { productId: { in: oldProductIds }, competitorName: sourceName! }
+          });
+        }
+      }
+
+      await prisma.competitorCatalogItem.deleteMany({
+        where: { fornecedor: fornecedorField!, competitorName: sourceName! }
+      });
 
       for (const row of rows) {
-        await prisma.competitorCatalogItem.create({
-          data: {
-            ean: row.ean,
-            fornecedor: fornecedorField!,
-            competitorName: sourceName!,
-            price: row.price
-          }
+        await prisma.competitorCatalogItem.upsert({
+          where: { ean_competitorName: { ean: row.ean, competitorName: sourceName! } },
+          create: { ean: row.ean, fornecedor: fornecedorField!, competitorName: sourceName!, price: row.price },
+          update: { fornecedor: fornecedorField!, price: row.price }
         });
         created++;
 
@@ -119,8 +139,10 @@ export async function POST(req: NextRequest) {
         const product = await prisma.product.findUnique({ where: { ean: row.ean } });
         if (!product) continue;
 
-        await prisma.competitorPrice.create({
-          data: { productId: product.id, competitorName: sourceName!, price: row.price }
+        await prisma.competitorPrice.upsert({
+          where: { productId_competitorName: { productId: product.id, competitorName: sourceName! } },
+          create: { productId: product.id, competitorName: sourceName!, price: row.price },
+          update: { price: row.price }
         });
       }
     }
