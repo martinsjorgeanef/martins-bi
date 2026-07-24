@@ -2,80 +2,103 @@
 
 import { CategoryRow } from "@/lib/types";
 
-function buildMotivos(critical: CategoryRow[]): string[] {
-  var motivos: string[] = [];
-  var totalDisadvantage = critical.reduce(function (sum, c) { return sum + c.disadvantage; }, 0);
+const MEDALS = ["🥇", "🥈"];
+const LABELS = ["1a Prioridade", "2a Prioridade"];
 
-  if (totalDisadvantage > 0) {
-    motivos.push("maior quantidade de itens em desvantagem");
+function buildRecommendationText(critical: CategoryRow[]): string {
+  if (critical.length === 0) {
+    return "Nenhuma categoria critica identificada no momento. A competitividade geral esta dentro do esperado.";
   }
-  motivos.push("maior impacto potencial nas vendas");
-  motivos.push("oportunidade de recuperar participacao de mercado");
 
-  return motivos;
+  var sorted = critical.slice().sort(function (a, b) { return a.competitivePct - b.competitivePct; });
+  var names = sorted.slice(0, 2).map(function (c) { return c.category; });
+
+  var namesText = names.length === 2 ? names[0] + " e " + names[1] : names[0];
+
+  return (
+    "A competitividade esta concentrada em " +
+    namesText +
+    ", onde foram identificadas as maiores perdas de preco frente aos concorrentes. Recomenda-se priorizar negociacoes nessas categorias, pois uma melhoria de preco tende a gerar maior recuperacao de competitividade e crescimento de vendas no estado."
+  );
 }
 
-export function OpportunitiesInsights({ categories }: { categories: CategoryRow[] }) {
-  var critical = categories.filter(function (c) {
-    return c.priority !== "Baixa";
-  });
-
+function buildActionPlan(critical: CategoryRow[]): string[] {
   if (critical.length === 0) {
-    return (
-      <div className="rounded-xl bg-white p-4 shadow-card">
-        <h3 className="text-[16px] font-semibold text-[#1F2937]">Sugestao de Negociacao</h3>
-        <p className="mt-2 text-[12px] text-[#94A3B8]">Nenhuma categoria critica identificada no momento.</p>
-      </div>
+    return ["Manter monitoramento periodico da competitividade."];
+  }
+
+  var byCompetitivePct = critical.slice().sort(function (a, b) { return a.competitivePct - b.competitivePct; });
+  var byDisadvantage = critical.slice().sort(function (a, b) { return b.disadvantage - a.disadvantage; });
+
+  var bullets: string[] = [];
+  var first = byCompetitivePct[0];
+  bullets.push(
+    "Priorizar negociacao da categoria " + first.category + ", que apresenta a menor competitividade (" + first.competitivePct + "%)."
+  );
+
+  var secondCandidate = byDisadvantage.find(function (c) { return c.category !== first.category; });
+  if (secondCandidate) {
+    bullets.push(
+      "Revisar a categoria " + secondCandidate.category + ", responsavel pelo maior numero de itens em desvantagem (" + secondCandidate.disadvantage + " itens)."
     );
   }
 
-  var hasAlta = critical.some(function (c) { return c.priority === "Alta"; });
-  var priorityLabel = hasAlta ? "Prioridade Alta" : "Prioridade Media";
-  var priorityColor = hasAlta ? "bg-bad-bg text-bad" : "bg-warn-bg text-warn";
+  bullets.push("Avaliar oportunidades de reducao de custo junto aos fornecedores dessas categorias.");
 
-  var suggestedCategories = critical
-    .slice()
-    .sort(function (a, b) { return a.competitivePct - b.competitivePct; })
-    .slice(0, 3);
+  return bullets.slice(0, 3);
+}
 
-  var motivos = buildMotivos(critical);
+export function OpportunitiesInsights({ categories }: { categories: CategoryRow[] }) {
+  var priority = categories.filter(function (c) { return c.priority !== "Baixa"; }).slice(0, 2);
+  var critical = categories.filter(function (c) { return c.priority !== "Baixa"; });
+
+  var recommendationText = buildRecommendationText(critical);
+  var actionPlan = buildActionPlan(critical);
 
   return (
     <div className="rounded-xl bg-white p-4 shadow-card">
-      <div className="flex items-center justify-between">
-        <h3 className="text-[16px] font-semibold text-[#1F2937]">Sugestao de Negociacao</h3>
-        <span className={"rounded-full px-2.5 py-1 text-[11px] font-semibold " + priorityColor}>{priorityLabel}</span>
-      </div>
+      <h3 className="text-[12px] font-semibold text-[#1F2937]">📌 Prioridades de Negociacao</h3>
 
-      <div className="mt-3">
-        <div className="text-[11px] font-medium uppercase tracking-wide text-[#94A3B8]">Categorias sugeridas</div>
-        <ul className="mt-1 space-y-0.5">
-          {suggestedCategories.map(function (c) {
+      {priority.length > 0 ? (
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {priority.map(function (c, idx) {
             return (
-              <li key={c.category} className="text-[12px] text-[#1F2937]">
-                • {c.category}
+              <div key={c.category} className="rounded-lg bg-surface px-3 py-2.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[12px]">{MEDALS[idx]}</span>
+                  <span className="text-[8px] font-medium uppercase tracking-wide text-[#94A3B8]">{LABELS[idx]}</span>
+                </div>
+                <div className="mt-0.5 text-[10px] font-semibold text-[#2563EB]">{c.category}</div>
+                <ul className="mt-1 space-y-0.5 text-[8px] text-[#6B7280]">
+                  <li>Posicionamento de mercado: {c.competitivePct}%</li>
+                  <li>Itens em desvantagem: {c.disadvantage}</li>
+                  <li>Gap medio: {c.avgDisadvantagePct !== null ? c.avgDisadvantagePct.toFixed(1).replace(".", ",") + "%" : "-"}</li>
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="mt-2 text-[9px] text-[#94A3B8]">Nenhuma categoria critica no momento.</p>
+      )}
+
+      <div className="mt-3 rounded-lg bg-[#FEF9E7] px-3 py-2.5">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[12px]">🎯</span>
+          <span className="text-[9px] font-semibold uppercase tracking-wide text-[#92400E]">Recomendacao</span>
+        </div>
+        <p className="mt-1.5 text-[12px] leading-relaxed text-[#1F2937]">{recommendationText}</p>
+        <ul className="mt-2 space-y-1 border-t border-[#F3E8B8] pt-2 text-[11px] leading-snug text-[#1F2937]">
+          {actionPlan.map(function (text, i) {
+            return (
+              <li key={i} className="flex items-start gap-1.5">
+                <span className="mt-0.5 shrink-0">•</span>
+                {text}
               </li>
             );
           })}
         </ul>
       </div>
-
-      <div className="mt-3">
-        <div className="text-[11px] font-medium uppercase tracking-wide text-[#94A3B8]">Motivos</div>
-        <ul className="mt-1 space-y-0.5">
-          {motivos.map(function (m, i) {
-            return (
-              <li key={i} className="text-[12px] text-[#6B7280]">
-                • {m}
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-
-      <p className="mt-3 rounded-lg bg-surface px-3 py-2 text-[12px] leading-snug text-[#1F2937]">
-        <strong>Proxima acao:</strong> Priorizar negociacao destas categorias junto a industria.
-      </p>
     </div>
   );
 }
