@@ -45,6 +45,21 @@ export async function POST(req: NextRequest) {
       processed = totalRows;
       skipped = parseSkipped;
 
+      if (rows.length === 0) {
+        return NextResponse.json(
+          {
+            error:
+              "Nenhuma linha valida foi encontrada nessa planilha de precos da Martins. Nada foi apagado."
+          },
+          { status: 400 }
+        );
+      }
+
+      // Substitui totalmente a base da Martins: produtos que nao estao mais nessa
+      // planilha sao removidos (junto com os precos de concorrente ligados a eles).
+      const newEans = rows.map(function (r) { return r.ean; });
+      await prisma.product.deleteMany({ where: { ean: { notIn: newEans } } });
+
       for (const row of rows) {
         const existing = await prisma.product.findUnique({ where: { ean: row.ean } });
         await prisma.product.upsert({
