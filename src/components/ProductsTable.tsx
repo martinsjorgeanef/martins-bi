@@ -19,18 +19,18 @@ interface Props {
 
 var HEADER_BG = "#EFF6FF";
 var HEADER_TEXT = "#1E3A8A";
-var EAN_WIDTH = 130;
+var EAN_WIDTH = 120;
 
 function money(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
 function DiffCell({ diffPct }: { diffPct: number | null }) {
-  if (diffPct === null) return <span className="text-[12px] text-ink-500">-</span>;
+  if (diffPct === null) return <span className="text-[10px] text-ink-500">-</span>;
   const pct = diffPct * 100;
   const positive = pct >= 0;
   return (
-    <span className={clsx("text-[12px] font-medium tabular-nums", positive ? "text-good" : "text-bad")}>
+    <span className={clsx("text-[10px] font-medium tabular-nums", positive ? "text-good" : "text-bad")}>
       {positive ? "+" : ""}
       {pct.toFixed(1)}%
     </span>
@@ -60,13 +60,13 @@ function SortHeader({
       onClick={function () { onSort(field); }}
       style={sticky ? { position: "sticky", left: 0, background: HEADER_BG, zIndex: 2 } : undefined}
       className={clsx(
-        "cursor-pointer select-none whitespace-nowrap px-3 py-3 hover:opacity-80",
+        "cursor-pointer select-none whitespace-nowrap px-2.5 py-2 hover:opacity-80",
         align === "right" && "text-right",
         align === "center" && "text-center"
       )}
     >
       <span
-        style={{ color: HEADER_TEXT, fontSize: "13px", fontWeight: 600 }}
+        style={{ color: HEADER_TEXT, fontSize: "11px", fontWeight: 600 }}
         className={clsx(
           "inline-flex items-center gap-1 uppercase tracking-wide",
           align === "right" && "flex-row-reverse",
@@ -74,7 +74,7 @@ function SortHeader({
         )}
       >
         {label}
-        <ArrowUpDown size={10} style={{ color: active ? "#2563EB" : "#94A3B8" }} />
+        <ArrowUpDown size={9} style={{ color: active ? "#2563EB" : "#94A3B8" }} />
       </span>
     </th>
   );
@@ -84,24 +84,24 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
   return (
     <div className="rounded-lg border border-line bg-white shadow-card">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1360px] border-collapse">
+        <table className="w-full table-fixed border-collapse">
           <colgroup>
             <col style={{ width: EAN_WIDTH }} />
-            <col style={{ width: 340 }} />
-            <col style={{ width: 200 }} />
-            <col style={{ width: 105 }} />
-            <col style={{ width: 120 }} />
+            <col style={{ width: 320 }} />
+            <col style={{ width: 190 }} />
             <col style={{ width: 100 }} />
-            <col style={{ width: 85 }} />
-            <col style={{ width: 95 }} />
             <col style={{ width: 110 }} />
+            <col style={{ width: 95 }} />
+            <col style={{ width: 80 }} />
+            <col style={{ width: 95 }} />
+            <col style={{ width: 100 }} />
           </colgroup>
           <thead className="border-b border-line" style={{ background: HEADER_BG }}>
             <tr>
               <SortHeader label="EAN" field="ean" sortBy={sortBy} sortDir={sortDir} onSort={onSort} sticky />
               <SortHeader label="Descricao" field="description" sortBy={sortBy} sortDir={sortDir} onSort={onSort} />
               <th
-                className="whitespace-nowrap px-3 py-3 text-left text-[13px] font-semibold uppercase tracking-wide"
+                className="whitespace-nowrap px-2.5 py-2 text-left text-[11px] font-semibold uppercase tracking-wide"
                 style={{ color: HEADER_TEXT }}
               >
                 Categoria
@@ -109,20 +109,20 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
               <SortHeader label="Preco Martins" field="martinsPrice" sortBy={sortBy} sortDir={sortDir} onSort={onSort} align="right" />
               <SortHeader label="Preco Concorrente" field="marketPrice" sortBy={sortBy} sortDir={sortDir} onSort={onSort} align="right" />
               <th
-                className="whitespace-nowrap px-3 py-3 text-left text-[13px] font-semibold uppercase tracking-wide"
+                className="whitespace-nowrap px-2.5 py-2 text-left text-[11px] font-semibold uppercase tracking-wide"
                 style={{ color: HEADER_TEXT }}
               >
                 Distribuidor
               </th>
               <SortHeader label="Diferenca" field="diffPct" sortBy={sortBy} sortDir={sortDir} onSort={onSort} align="right" />
               <th
-                className="whitespace-nowrap px-3 py-3 text-center text-[13px] font-semibold uppercase tracking-wide"
+                className="whitespace-nowrap px-2.5 py-2 text-center text-[11px] font-semibold uppercase tracking-wide"
                 style={{ color: HEADER_TEXT }}
               >
                 Status
               </th>
               <th
-                className="whitespace-nowrap px-3 py-3 text-center text-[13px] font-semibold uppercase tracking-wide"
+                className="whitespace-nowrap px-2.5 py-2 text-center text-[11px] font-semibold uppercase tracking-wide"
                 style={{ color: HEADER_TEXT }}
               >
                 Simulacao
@@ -134,8 +134,8 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
               ? Array.from({ length: 10 }).map(function (_, i) {
                   return (
                     <tr key={i} className="border-b border-line/60">
-                      <td colSpan={9} className="px-3 py-2">
-                        <div className="h-3 w-full animate-pulse rounded bg-line/60" />
+                      <td colSpan={9} className="px-2.5 py-1.5">
+                        <div className="h-2.5 w-full animate-pulse rounded bg-line/60" />
                       </td>
                     </tr>
                   );
@@ -144,7 +144,7 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
 
             {!loading && rows.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-3 py-8 text-center text-[13px] text-ink-600">
+                <td colSpan={9} className="px-2.5 py-8 text-center text-[11px] text-ink-600">
                   Nenhum produto encontrado com esses filtros.
                 </td>
               </tr>
@@ -160,43 +160,43 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
                       style={{ background: rowBg }}
                     >
                       <td
-                        className="whitespace-nowrap px-3 py-2 font-mono text-[12px] text-ink-700"
+                        className="whitespace-nowrap px-2.5 py-1.5 font-mono text-[10px] text-ink-700"
                         style={{ position: "sticky", left: 0, background: rowBg }}
                       >
                         {r.ean}
                       </td>
-                      <td className="truncate px-3 py-2 text-[12px] text-ink-950" title={r.description}>
+                      <td className="truncate px-2.5 py-1.5 text-[10px] text-ink-950" title={r.description}>
                         {r.description}
                       </td>
-                      <td className="truncate px-3 py-2 text-[12px] text-ink-700" title={r.category || ""}>
+                      <td className="truncate px-2.5 py-1.5 text-[10px] text-ink-700" title={r.category || ""}>
                         {r.category ? r.category : "-"}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-right text-[12px] font-medium tabular-nums text-ink-950">
+                      <td className="whitespace-nowrap px-2.5 py-1.5 text-right text-[10px] font-medium tabular-nums text-ink-950">
                         {money(r.martinsPrice)}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-right text-[12px] font-medium tabular-nums text-ink-700">
+                      <td className="whitespace-nowrap px-2.5 py-1.5 text-right text-[10px] font-medium tabular-nums text-ink-700">
                         {r.marketPrice !== null ? money(r.marketPrice) : "-"}
                       </td>
-                      <td className="truncate px-3 py-2 text-[12px] font-medium text-ink-700" title={r.bestCompetitor || ""}>
+                      <td className="truncate px-2.5 py-1.5 text-[10px] font-medium text-ink-700" title={r.bestCompetitor || ""}>
                         {r.bestCompetitor ? r.bestCompetitor : "-"}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-right">
+                      <td className="whitespace-nowrap px-2.5 py-1.5 text-right">
                         <DiffCell diffPct={r.diffPct} />
                       </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-center">
+                      <td className="whitespace-nowrap px-2.5 py-1.5 text-center">
                         <StatusBadge status={r.status} />
                       </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-center">
+                      <td className="whitespace-nowrap px-2.5 py-1.5 text-center">
                         {r.requiredDiscountPct !== undefined ? (
                           <span
                             title={"Aplicando " + (r.requiredDiscountPct * 100).toFixed(1).replace(".", ",") + "% de desconto, este item torna-se competitivo."}
-                            className="inline-flex items-center gap-1 rounded-full bg-surface px-2 py-0.5 text-[11px] font-medium text-[#374151]"
+                            className="inline-flex items-center gap-1 rounded-full bg-surface px-1.5 py-0.5 text-[9px] font-medium text-[#374151]"
                           >
                             {r.requiredDiscountPct * 100 <= 2 ? "🟢" : r.requiredDiscountPct * 100 <= 5 ? "🟡" : "🔴"}
-                            {" Desc. " + (r.requiredDiscountPct * 100).toFixed(1).replace(".", ",") + "%"}
+                            {" " + (r.requiredDiscountPct * 100).toFixed(1).replace(".", ",") + "%"}
                           </span>
                         ) : (
-                          <span className="text-[11px] text-ink-500">-</span>
+                          <span className="text-[9px] text-ink-500">-</span>
                         )}
                       </td>
                     </tr>
@@ -207,8 +207,8 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
         </table>
       </div>
 
-      <div className="flex items-center justify-between border-t border-line px-3 py-2">
-        <span className="text-[12px] text-ink-600">
+      <div className="flex items-center justify-between border-t border-line px-2.5 py-1.5">
+        <span className="text-[10px] text-ink-600">
           {total.toLocaleString("pt-BR")} produto{total !== 1 ? "s" : ""} - pagina {page} de {totalPages}
         </span>
         <div className="flex items-center gap-1">
@@ -217,14 +217,14 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
             disabled={page <= 1}
             className="rounded-md border border-line p-1 text-ink-700 disabled:opacity-30"
           >
-            <ChevronLeft size={14} />
+            <ChevronLeft size={12} />
           </button>
           <button
             onClick={function () { onPage(Math.min(totalPages, page + 1)); }}
             disabled={page >= totalPages}
             className="rounded-md border border-line p-1 text-ink-700 disabled:opacity-30"
           >
-            <ChevronRight size={14} />
+            <ChevronRight size={12} />
           </button>
         </div>
       </div>
