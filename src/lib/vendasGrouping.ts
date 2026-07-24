@@ -17,60 +17,23 @@ export type VendasMode = "resumida" | "completo";
 export interface VendasGroups {
   categoryNames: string[];
   byCategory: Map<string, Map<string, Map<string, VendasVariant[]>>>;
-  tipoByCategoryBrand: Map<string, Map<string, string | null>>;
 }
 
 export var MAX_ITEMS_PER_LINE = 6;
 
-export function buildVendasGroups(items: VendasItemInput[], mode?: VendasMode): VendasGroups {
-  var limit = mode === "completo" ? Infinity : MAX_ITEMS_PER_LINE;
+export function buildVendasGroups(items: VendasItemInput[]): VendasGroups {
   var byCategory = new Map<string, Map<string, Map<string, VendasVariant[]>>>();
-  var tipoTracker = new Map<string, Map<string, Set<string>>>();
 
   items.forEach(function (it) {
     var category = it.category ? it.category : "Sem categoria";
     var cleaned = cleanProductName(it.description, category);
-    var brand = cleaned.brand;
-    var lineKey = cleaned.linha ? cleaned.linha : (cleaned.descriptor || "Linha Padrao");
-
-    var label = "";
-    if (cleaned.linha && cleaned.descriptor) {
-      label = cleaned.descriptor;
-    }
-    if (cleaned.weight) {
-      label = label ? label + " " + cleaned.weight : cleaned.weight;
-    }
-    if (!label) {
-      label = it.description.length > 45 ? it.description.slice(0, 45) + "..." : it.description;
-    }
 
     if (!byCategory.has(category)) byCategory.set(category, new Map());
     var brandMap = byCategory.get(category) as Map<string, Map<string, VendasVariant[]>>;
-    if (!brandMap.has(brand)) brandMap.set(brand, new Map());
-    var lineMap = brandMap.get(brand) as Map<string, VendasVariant[]>;
-    if (!lineMap.has(lineKey)) lineMap.set(lineKey, []);
-    var arr = lineMap.get(lineKey) as VendasVariant[];
-    if (arr.length < limit) {
-      arr.push({ label: label, price: it.martinsPrice });
-    } else {
-      arr.push({ label: label, price: it.martinsPrice });
-    }
-
-    if (cleaned.tipo) {
-      if (!tipoTracker.has(category)) tipoTracker.set(category, new Map());
-      var catMap = tipoTracker.get(category) as Map<string, Set<string>>;
-      if (!catMap.has(brand)) catMap.set(brand, new Set<string>());
-      (catMap.get(brand) as Set<string>).add(cleaned.tipo);
-    }
-  });
-
-  var tipoByCategoryBrand = new Map<string, Map<string, string | null>>();
-  tipoTracker.forEach(function (brandMap, category) {
-    var outMap = new Map<string, string | null>();
-    brandMap.forEach(function (tipoSet, brand) {
-      outMap.set(brand, tipoSet.size === 1 ? Array.from(tipoSet)[0] : null);
-    });
-    tipoByCategoryBrand.set(category, outMap);
+    if (!brandMap.has(cleaned.brand)) brandMap.set(cleaned.brand, new Map());
+    var headerMap = brandMap.get(cleaned.brand) as Map<string, VendasVariant[]>;
+    if (!headerMap.has(cleaned.header)) headerMap.set(cleaned.header, []);
+    (headerMap.get(cleaned.header) as VendasVariant[]).push({ label: cleaned.itemLabel, price: it.martinsPrice });
   });
 
   var categoryNames = Array.from(byCategory.keys()).sort(function (a, b) {
@@ -83,5 +46,5 @@ export function buildVendasGroups(items: VendasItemInput[], mode?: VendasMode): 
     return countB - countA;
   });
 
-  return { categoryNames: categoryNames, byCategory: byCategory, tipoByCategoryBrand: tipoByCategoryBrand };
+  return { categoryNames: categoryNames, byCategory: byCategory };
 }
