@@ -52,19 +52,24 @@ export async function GET() {
     const status = calcStatus(diffPct, thresholdFraction);
     diffSum += diffPct;
 
-    if (status === "COMPETITIVO") competitive++;
-    else if (status === "ATENCAO") attention++;
-    else {
+    if (status === "COMPETITIVO") {
+      competitive++;
+    } else if (status === "ATENCAO") {
+      attention++;
+    } else {
       disadvantage++;
       var requiredDiscount = calcRequiredDiscountPct(p.martinsPrice, best.price, thresholdFraction);
       recoveryDiscountSum += requiredDiscount;
-      if (requiredDiscount * 100 <= 2) recoveryGreen++;
-      else if (requiredDiscount * 100 <= 5) recoveryYellow++;
-      else recoveryRed++;
+      if (requiredDiscount * 100 <= 2) {
+        recoveryGreen++;
+      } else if (requiredDiscount * 100 <= 5) {
+        recoveryYellow++;
+      } else {
+        recoveryRed++;
+      }
     }
 
-    matchedItems.push({ ean: p.ean, description: p.description, diffPct: diffPct, category: p.category, martinsPrice: p.martinsPrice });
-  }
+    matchedItems.push({
       ean: p.ean,
       description: p.description,
       diffPct: diffPct,
@@ -81,7 +86,6 @@ export async function GET() {
   });
 
   const top20Worst = worstSorted.slice(0, 20);
-  const top10Best = bestSorted.slice(0, 10);
 
   const allEans = top20Worst
     .map(function (w) {
@@ -127,16 +131,18 @@ export async function GET() {
         diffPct: Math.round(w.diffPct * 1000) / 10
       };
     }),
-    recoveryPotential: disadvantage > 0 ? {
-      avgDiscountPct: Math.round((recoveryDiscountSum / disadvantage) * 1000) / 10,
-      itemsRecoverable: disadvantage,
-      oldCompetitivePct: matched > 0 ? Math.round((competitive / matched) * 1000) / 10 : 0,
-      newCompetitivePct: matched > 0 ? Math.round(((competitive + disadvantage) / matched) * 1000) / 10 : 0,
-      green: recoveryGreen,
-      yellow: recoveryYellow,
-      red: recoveryRed
-    } : null,
-   topAdvantage: bestSorted.slice(0, 100).map(function (w) {
+    recoveryPotential: disadvantage > 0
+      ? {
+          avgDiscountPct: Math.round((recoveryDiscountSum / disadvantage) * 1000) / 10,
+          itemsRecoverable: disadvantage,
+          oldCompetitivePct: matched > 0 ? Math.round((competitive / matched) * 1000) / 10 : 0,
+          newCompetitivePct: matched > 0 ? Math.round(((competitive + disadvantage) / matched) * 1000) / 10 : 0,
+          green: recoveryGreen,
+          yellow: recoveryYellow,
+          red: recoveryRed
+        }
+      : null,
+    topAdvantage: bestSorted.slice(0, 100).map(function (w) {
       return {
         ean: w.ean,
         description: longDescByEan.get(w.ean) || w.description,
