@@ -5,7 +5,13 @@ import { calcDiffPct, calcStatus, calcRequiredDiscountPct } from "@/lib/calculat
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const competitorsParam = searchParams.get("competitors") || "";
+  const selectedCompetitors = competitorsParam
+    ? competitorsParam.split(",").map(function (s) { return s.trim(); }).filter(function (s) { return s.length > 0; })
+    : null;
+
   const settings = await prisma.settings.findUnique({ where: { id: "singleton" } });
   const thresholdFraction = (settings?.thresholdPct ?? 5) / 100;
 
@@ -34,18 +40,26 @@ export async function GET() {
   }[] = [];
 
   for (const p of products) {
-    const hasCompetitorData = p.competitorPrices.length > 0;
+    var allComp = p.competitorPrices;
+    var considered = selectedCompetitors
+      ? allComp.filter(function (c) { return selectedCompetitors.indexOf(c.competitorName) !== -1; })
+      : allComp;
+
+    if (allComp.length > 0) {
+      for (const c of allComp) competitorsSet.add(c.competitorName);
+    }
+
+    const hasCompetitorData = considered.length > 0;
 
     if (hasCompetitorData) {
       if (p.category) categoriesSet.add(p.category);
       if (p.supplier) suppliersSet.add(p.supplier);
-      for (const c of p.competitorPrices) competitorsSet.add(c.competitorName);
     }
 
     if (!hasCompetitorData) continue;
     matched++;
 
-    const best = p.competitorPrices.reduce(function (min, c) {
+    const best = considered.reduce(function (min, c) {
       return c.price < min.price ? c : min;
     });
     const diffPct = calcDiffPct(p.martinsPrice, best.price);
