@@ -16,7 +16,7 @@ import { UploadPanel } from "./UploadPanel";
 import { ClearDataModal } from "./ClearDataModal";
 import { ExportButtons } from "./ExportButtons";
 import { DashboardStats, ProductRow, IndustryRow, CategoryRow } from "@/lib/types";
-import { UploadCloud, BarChart3, Megaphone, Maximize2, Minimize2, Trash2 } from "lucide-react";
+import { UploadCloud, BarChart3, Megaphone, Maximize2, Minimize2, Trash2, MessageCircle } from "lucide-react";
 import Link from "next/link";
 
 interface StatsResponse extends DashboardStats {
