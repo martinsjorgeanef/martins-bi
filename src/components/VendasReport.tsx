@@ -92,7 +92,8 @@ export function VendasReport() {
 
                 <div className="mt-2 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
                   {brandNames.map(function (brand) {
-                    var lineMap = brandMap.get(brand) as Map<string, { label: string; price: number | undefined }[]>;
+                    var safeBrandMap = brandMap as Map<string, Map<string, { label: string; price: number | undefined }[]>>;
+                    var lineMap = safeBrandMap.get(brand) as Map<string, { label: string; price: number | undefined }[]>;
                     var lineKeys = Array.from(lineMap.keys()).sort();
                     var uniformTipo = tipoMap ? tipoMap.get(brand) : null;
 
