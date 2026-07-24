@@ -12,6 +12,8 @@ export interface VendasItemInput {
   martinsPrice?: number;
 }
 
+export type VendasMode = "resumida" | "completo";
+
 export interface VendasGroups {
   categoryNames: string[];
   byCategory: Map<string, Map<string, Map<string, VendasVariant[]>>>;
@@ -20,13 +22,14 @@ export interface VendasGroups {
 
 export var MAX_ITEMS_PER_LINE = 6;
 
-export function buildVendasGroups(items: VendasItemInput[]): VendasGroups {
+export function buildVendasGroups(items: VendasItemInput[], mode?: VendasMode): VendasGroups {
+  var limit = mode === "completo" ? Infinity : MAX_ITEMS_PER_LINE;
   var byCategory = new Map<string, Map<string, Map<string, VendasVariant[]>>>();
   var tipoTracker = new Map<string, Map<string, Set<string>>>();
 
   items.forEach(function (it) {
     var category = it.category ? it.category : "Sem categoria";
-    var cleaned = cleanProductName(it.description);
+    var cleaned = cleanProductName(it.description, category);
     var brand = cleaned.brand;
     var lineKey = cleaned.linha ? cleaned.linha : (cleaned.descriptor || "Linha Padrao");
 
@@ -46,7 +49,12 @@ export function buildVendasGroups(items: VendasItemInput[]): VendasGroups {
     if (!brandMap.has(brand)) brandMap.set(brand, new Map());
     var lineMap = brandMap.get(brand) as Map<string, VendasVariant[]>;
     if (!lineMap.has(lineKey)) lineMap.set(lineKey, []);
-    (lineMap.get(lineKey) as VendasVariant[]).push({ label: label, price: it.martinsPrice });
+    var arr = lineMap.get(lineKey) as VendasVariant[];
+    if (arr.length < limit) {
+      arr.push({ label: label, price: it.martinsPrice });
+    } else {
+      arr.push({ label: label, price: it.martinsPrice });
+    }
 
     if (cleaned.tipo) {
       if (!tipoTracker.has(category)) tipoTracker.set(category, new Map());
