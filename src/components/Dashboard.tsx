@@ -57,6 +57,7 @@ export function Dashboard() {
   const [threshold, setThreshold] = useState(5);
 
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [clearOpen, setClearOpen] = useState(false);
   const [execMode, setExecMode] = useState(false);
 
   useEffect(function () {
