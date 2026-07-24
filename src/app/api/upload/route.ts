@@ -18,14 +18,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Nenhum arquivo enviado." }, { status: 400 });
     }
     if (type !== "MARTINS" && type !== "COMPETITOR") {
-      return NextResponse.json({ error: "Tipo de upload inválido." }, { status: 400 });
+      return NextResponse.json({ error: "Tipo de upload invalido." }, { status: 400 });
     }
     if (type === "COMPETITOR" && !sourceName) {
       return NextResponse.json({ error: "Informe o nome do distribuidor concorrente." }, { status: 400 });
     }
     if (type === "COMPETITOR" && !fornecedorField) {
       return NextResponse.json(
-        { error: "Informe a indústria/fornecedor desse lote do concorrente." },
+        { error: "Informe a industria/fornecedor desse lote do concorrente." },
         { status: 400 }
       );
     }
@@ -38,7 +38,10 @@ export async function POST(req: NextRequest) {
     let processed = 0;
 
     if (type === "MARTINS") {
-      const { rows, totalRows, skipped: parseSkipped } = parseMartinsFile(buffer);
+      const parsedMartins = parseMartinsFile(buffer);
+      const rows = parsedMartins.rows;
+      const totalRows = parsedMartins.totalRows;
+      const parseSkipped = parsedMartins.skipped;
       processed = totalRows;
       skipped = parseSkipped;
 
@@ -65,12 +68,23 @@ export async function POST(req: NextRequest) {
         existing ? updated++ : created++;
       }
     } else {
-      const { rows, totalRows, skipped: parseSkipped } = parseCompetitorFile(buffer);
+      const parsedCompetitor = parseCompetitorFile(buffer);
+      const rows = parsedCompetitor.rows;
+      const totalRows = parsedCompetitor.totalRows;
+      const parseSkipped = parsedCompetitor.skipped;
       processed = totalRows;
       skipped = parseSkipped;
 
-      // Cada comprador atua com uma indústria por vez: cada novo envio de concorrente
-      // substitui COMPLETAMENTE o que existia antes (não acumula outras indústrias).
+      if (rows.length === 0) {
+        return NextResponse.json(
+          {
+            error:
+              "Nenhuma linha valida foi encontrada nesse arquivo (verifique se as colunas EAN, Descricao e Valor final existem). Nada foi apagado."
+          },
+          { status: 400 }
+        );
+      }
+
       await prisma.competitorCatalogItem.deleteMany({});
       await prisma.competitorPrice.deleteMany({});
 
@@ -98,7 +112,7 @@ export async function POST(req: NextRequest) {
 
     await prisma.uploadLog.create({
       data: {
-        type,
+        type: type,
         sourceName: type === "COMPETITOR" ? sourceName : null,
         fileName: file.name,
         rowsProcessed: processed,
@@ -110,16 +124,16 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      processed,
-      created,
-      updated,
-      skipped,
+      processed: processed,
+      created: created,
+      updated: updated,
+      skipped: skipped,
       fornecedor: fornecedorField
     });
   } catch (err) {
     console.error(err);
     return NextResponse.json(
-      { error: "Erro ao processar o arquivo. Verifique se o formato está correto." },
+      { error: "Erro ao processar o arquivo. Verifique se o formato esta correto." },
       { status: 500 }
     );
   }
