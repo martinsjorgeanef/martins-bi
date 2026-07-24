@@ -123,7 +123,7 @@ export function ProductAnalysisScreen() {
 
   return (
     <div className="mx-auto flex max-w-[1800px] w-[95%] flex-col gap-4 py-6">
-      <h1 className="text-[20px] font-bold text-[#1F2937]">Analise de Produtos</h1>
+      <h1 className="text-[16px] font-bold text-[#1F2937]">Analise de Produtos</h1>
 
       <Filters
         search={search}
