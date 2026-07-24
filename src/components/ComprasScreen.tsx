@@ -6,6 +6,7 @@ import { OpportunitiesInsights } from "./OpportunitiesInsights";
 import { PriorityActions } from "./PriorityActions";
 import { CategoryTable } from "./CategoryTable";
 import { IndustryRow, CategoryRow } from "@/lib/types";
+import { FileText } from "lucide-react";
 
 export function ComprasScreen() {
   const [industries, setIndustries] = useState<IndustryRow[]>([]);
@@ -48,7 +49,20 @@ export function ComprasScreen() {
 
   return (
     <div className="mx-auto flex max-w-[1000px] w-[95%] flex-col gap-4 py-6">
-      <h1 className="text-[20px] font-bold text-[#1F2937]">Compras</h1>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-[20px] font-bold text-[#1F2937]">Analise para Compradores</h1>
+          <p className="mt-0.5 text-[12px] text-[#6B7280]">Posicionamento, prioridades e sugestoes de negociacao</p>
+        </div>
+        <button
+          disabled
+          title="Em breve: exportar esta analise em PDF"
+          className="flex items-center gap-1.5 rounded-lg border border-line px-3 py-2 text-[12px] font-medium text-ink-500 opacity-60"
+        >
+          <FileText size={14} />
+          Exportar PDF (em breve)
+        </button>
+      </div>
 
       <PriorityVendorCard industry={industries[0]} />
       <OpportunitiesInsights categories={categories} />
