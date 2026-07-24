@@ -17,7 +17,9 @@ interface Props {
 export function SalesMessageModal({ open, onClose, items, industryName, initialMode }: Props) {
   const [copied, setCopied] = useState(false);
   const [mode, setMode] = useState<VendasMode>(initialMode || "resumida");
-  const message = useMemo(function () { return buildVendasMessage(items, industryName, mode); }, [items, industryName, mode]);
+  const message = useMemo(function () {
+    return buildVendasMessage(items, industryName, mode);
+  }, [items, industryName, mode]);
 
   if (!open) return null;
 
