@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { Search, SlidersHorizontal, ChevronDown } from "lucide-react";
+import { Search, SlidersHorizontal } from "lucide-react";
 
 interface Props {
   search: string;
@@ -10,12 +9,9 @@ interface Props {
   onCategory: (v: string) => void;
   status: string;
   onStatus: (v: string) => void;
-  selectedCompetitors: string[];
-  onSelectedCompetitorsChange: (v: string[]) => void;
   supplier: string;
   onSupplier: (v: string) => void;
   categories: string[];
-  competitorNames: string[];
   supplierNames: string[];
   threshold: number;
   onThreshold: (v: number) => void;
@@ -30,30 +26,12 @@ export function Filters(props: Props) {
   const onCategory = props.onCategory;
   const status = props.status;
   const onStatus = props.onStatus;
-  const selectedCompetitors = props.selectedCompetitors;
-  const onSelectedCompetitorsChange = props.onSelectedCompetitorsChange;
   const supplier = props.supplier;
   const onSupplier = props.onSupplier;
   const categories = props.categories;
-  const competitorNames = props.competitorNames;
   const supplierNames = props.supplierNames;
   const threshold = props.threshold;
   const onThreshold = props.onThreshold;
-
-  const [compOpen, setCompOpen] = useState(false);
-  const allSelected = selectedCompetitors.length === 0;
-
-  function toggleCompetitor(name: string) {
-    if (selectedCompetitors.indexOf(name) !== -1) {
-      onSelectedCompetitorsChange(selectedCompetitors.filter(function (c) { return c !== name; }));
-    } else {
-      onSelectedCompetitorsChange(selectedCompetitors.concat([name]));
-    }
-  }
-
-  var competitorLabel = allSelected
-    ? "Todos os concorrentes"
-    : selectedCompetitors.length + " concorrente" + (selectedCompetitors.length !== 1 ? "s" : "");
 
   return (
     <div className="flex flex-nowrap items-center gap-2 overflow-x-auto rounded-xl border border-line bg-white p-3 shadow-card">
@@ -88,41 +66,6 @@ export function Filters(props: Props) {
           return <option key={c} value={c}>{c}</option>;
         })}
       </select>
-
-      <div className="relative shrink-0">
-        <button
-          onClick={function () { setCompOpen(!compOpen); }}
-          className={FIELD_CLASS + " flex items-center gap-1.5 whitespace-nowrap"}
-        >
-          {competitorLabel}
-          <ChevronDown size={13} />
-        </button>
-        {compOpen ? (
-          <div className="absolute left-0 top-10 z-20 w-52 rounded-lg border border-line bg-white p-2 shadow-card">
-            <label className="flex items-center gap-2 rounded px-2 py-1.5 text-[12px] hover:bg-surface">
-              <input
-                type="checkbox"
-                checked={allSelected}
-                onChange={function () { onSelectedCompetitorsChange([]); }}
-              />
-              Todos
-            </label>
-            <div className="my-1 border-t border-line" />
-            {competitorNames.map(function (name) {
-              return (
-                <label key={name} className="flex items-center gap-2 rounded px-2 py-1.5 text-[12px] hover:bg-surface">
-                  <input
-                    type="checkbox"
-                    checked={selectedCompetitors.indexOf(name) !== -1}
-                    onChange={function () { toggleCompetitor(name); }}
-                  />
-                  {name}
-                </label>
-              );
-            })}
-          </div>
-        ) : null}
-      </div>
 
       <select
         value={status}
