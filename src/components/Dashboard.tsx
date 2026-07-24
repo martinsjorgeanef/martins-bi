@@ -50,7 +50,7 @@ export function Dashboard() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("");
-  const [competitor, setCompetitor] = useState("");
+  const [selectedCompetitors, setSelectedCompetitors] = useState<string[]>([]);
   const [supplier, setSupplier] = useState("");
   const [page, setPage] = useState(1);
   const [sortBy, setSortBy] = useState("diffPct");
@@ -68,16 +68,17 @@ export function Dashboard() {
 
   useEffect(function () {
     setPage(1);
-  }, [debouncedSearch, category, status, competitor, supplier]);
+  }, [debouncedSearch, category, status, selectedCompetitors, supplier]);
 
   const loadStats = useCallback(async function () {
     setStatsLoading(true);
-    const res = await fetch("/api/stats");
+    const params = new URLSearchParams({ competitors: selectedCompetitors.join(",") });
+    const res = await fetch("/api/stats?" + params.toString());
     const data = await res.json();
     setStats(data);
     setThreshold(data.thresholdPct);
     setStatsLoading(false);
-  }, []);
+  }, [selectedCompetitors]);
 
   const loadRows = useCallback(async function () {
     setRowsLoading(true);
@@ -86,7 +87,7 @@ export function Dashboard() {
       search: debouncedSearch,
       category: category,
       status: status,
-      competitor: competitor,
+      competitors: selectedCompetitors.join(","),
       supplier: supplier,
       page: String(page),
       pageSize: pageSize,
@@ -99,7 +100,7 @@ export function Dashboard() {
     setTotal(data.total);
     setTotalPages(data.totalPages);
     setRowsLoading(false);
-  }, [debouncedSearch, category, status, competitor, supplier, page, sortBy, sortDir, execMode]);
+  }, [debouncedSearch, category, status, selectedCompetitors, supplier, page, sortBy, sortDir, execMode]);
 
   const loadIndustries = useCallback(async function () {
     const res = await fetch("/api/industries");
@@ -118,7 +119,7 @@ export function Dashboard() {
       search: debouncedSearch,
       category: category,
       status: status,
-      competitor: competitor,
+      competitors: selectedCompetitors.join(","),
       supplier: supplier,
       page: "1",
       pageSize: "5000",
@@ -128,7 +129,7 @@ export function Dashboard() {
     const res = await fetch("/api/products?" + params.toString());
     const data = await res.json();
     return data.rows as ProductRow[];
-  }, [debouncedSearch, category, status, competitor, supplier, sortBy, sortDir]);
+  }, [debouncedSearch, category, status, selectedCompetitors, supplier, sortBy, sortDir]);
 
   useEffect(function () { loadStats(); }, [loadStats]);
   useEffect(function () { loadRows(); }, [loadRows]);
@@ -255,7 +256,7 @@ export function Dashboard() {
       <main className={mainClass}>
         {emptyStateBlock}
 
-       <KpiCards stats={stats} loading={statsLoading} />
+        <KpiCards stats={stats} loading={statsLoading} />
 
         {!execMode ? <CadgerInfoCard /> : null}
 
@@ -320,8 +321,8 @@ export function Dashboard() {
           onCategory={setCategory}
           status={status}
           onStatus={setStatus}
-          competitor={competitor}
-          onCompetitor={setCompetitor}
+          selectedCompetitors={selectedCompetitors}
+          onSelectedCompetitorsChange={setSelectedCompetitors}
           supplier={supplier}
           onSupplier={setSupplier}
           categories={stats ? stats.categories : []}
