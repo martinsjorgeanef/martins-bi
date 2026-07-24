@@ -7,13 +7,12 @@ export async function POST() {
   try {
     await prisma.competitorPrice.deleteMany({});
     await prisma.competitorCatalogItem.deleteMany({});
-    
     await prisma.product.deleteMany({});
     await prisma.uploadLog.deleteMany({});
     await prisma.settings.upsert({
       where: { id: "singleton" },
-      create: { id: "singleton", thresholdPct: 5 },
-      update: { thresholdPct: 5 }
+      create: { id: "singleton", thresholdPct: 5, activeCompetitors: "" },
+      update: { thresholdPct: 5, activeCompetitors: "" }
     });
 
     return NextResponse.json({ success: true });
