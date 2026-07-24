@@ -1,5 +1,5 @@
 import { DisadvantageItem } from "@/components/Charts";
-import { buildVendasGroups, MAX_ITEMS_PER_LINE } from "./vendasGrouping";
+import { buildVendasGroups, MAX_ITEMS_PER_LINE, VendasMode } from "./vendasGrouping";
 
 function money(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -18,12 +18,14 @@ function emojiFor(category: string): string {
   return CATEGORY_EMOJI[key] || "🛍️";
 }
 
-export function buildVendasMessage(items: DisadvantageItem[], industryName: string | null) {
-  var subject = "Oportunidades Comerciais - Vantagem Competitiva Martins";
-  var groups = buildVendasGroups(items);
+export function buildVendasMessage(items: DisadvantageItem[], industryName: string | null, mode: VendasMode) {
+  var subject =
+    mode === "completo" ? "Catalogo Completo - Martins" : "Oportunidades Comerciais - Vantagem Competitiva Martins";
+  var groups = buildVendasGroups(items, mode);
+  var limit = mode === "completo" ? Infinity : MAX_ITEMS_PER_LINE;
 
   var lines: string[] = [];
-  lines.push("🔥 OPORTUNIDADES DO DIA 🔥");
+  lines.push(mode === "completo" ? "📖 CATALOGO COMPLETO" : "🔥 OPORTUNIDADES DO DIA 🔥");
   if (industryName) {
     lines.push("🏭 INDUSTRIA: " + industryName.toUpperCase());
   }
@@ -51,7 +53,7 @@ export function buildVendasMessage(items: DisadvantageItem[], industryName: stri
       var lineMap = brandMap.get(brand) as Map<string, { label: string; price: number | undefined }[]>;
       Array.from(lineMap.keys()).sort().forEach(function (lineKey) {
         var variants = lineMap.get(lineKey) as { label: string; price: number | undefined }[];
-        var shown = variants.slice(0, MAX_ITEMS_PER_LINE);
+        var shown = isFinite(limit) ? variants.slice(0, limit) : variants;
         var remaining = variants.length - shown.length;
 
         shown.forEach(function (v) {
@@ -66,7 +68,7 @@ export function buildVendasMessage(items: DisadvantageItem[], industryName: stri
     });
   });
 
-  lines.push("Bom trabalho e boas vendas!");
+  lines.push(mode === "completo" ? "Catalogo completo disponivel para consulta." : "Bom trabalho e boas vendas!");
 
   return { subject: subject, body: lines.join("\n") };
 }
