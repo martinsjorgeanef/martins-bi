@@ -256,7 +256,13 @@ export function Dashboard() {
 
         <KpiCards stats={stats} loading={statsLoading} />
 
-        {!execMode && stats ? <RecoveryPotentialCard recovery={stats.recoveryPotential} /> : null}
+        {!execMode && stats ? (
+          <RecoveryPotentialCard
+            recovery={stats.recoveryPotential}
+            competitive={stats.competitive}
+            matchedProducts={stats.matchedProducts}
+          />
+        ) : null}
 
         {!execMode && stats ? <ExecutiveSummary stats={stats} industries={industries} categories={categories} /> : null}
 
