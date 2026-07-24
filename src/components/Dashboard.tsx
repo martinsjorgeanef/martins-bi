@@ -7,6 +7,7 @@ import { PriorityActions } from "./PriorityActions";
 import { PriorityVendorCard } from "./PriorityVendorCard";
 import { OpportunitiesInsights } from "./OpportunitiesInsights";
 import { RecoveryPotentialCard } from "./RecoveryPotentialCard";
+import { CadgerInfoCard } from "./CadgerInfoCard";
 import { TopDisadvantageChart } from "./Charts";
 import { CategoryTable } from "./CategoryTable";
 import { Filters } from "./Filters";
