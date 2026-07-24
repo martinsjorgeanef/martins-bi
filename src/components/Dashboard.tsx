@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import { KpiCards } from "./KpiCards";
 import { ExecutiveSummary } from "./ExecutiveSummary";
 import { PriorityActions } from "./PriorityActions";
@@ -16,8 +17,7 @@ import { UploadPanel } from "./UploadPanel";
 import { ClearDataModal } from "./ClearDataModal";
 import { ExportButtons } from "./ExportButtons";
 import { DashboardStats, ProductRow, IndustryRow, CategoryRow } from "@/lib/types";
-import { UploadCloud, BarChart3, Megaphone, Maximize2, Minimize2, Trash2, MessageCircle } from "lucide-react";
-import Link from "next/link";
+import { UploadCloud, BarChart3, Megaphone, Maximize2, Minimize2, Trash2, MessageCircle, Users } from "lucide-react";
 
 interface StatsResponse extends DashboardStats {
   thresholdPct: number;
@@ -46,11 +46,13 @@ export function Dashboard() {
   const [industries, setIndustries] = useState<IndustryRow[]>([]);
   const [categories, setCategories] = useState<CategoryRow[]>([]);
 
+  const [activeCompetitors, setActiveCompetitors] = useState<string[]>([]);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("");
-  const [selectedCompetitors, setSelectedCompetitors] = useState<string[]>([]);
   const [supplier, setSupplier] = useState("");
   const [page, setPage] = useState(1);
   const [sortBy, setSortBy] = useState("diffPct");
@@ -62,32 +64,46 @@ export function Dashboard() {
   const [execMode, setExecMode] = useState(false);
 
   useEffect(function () {
+    fetch("/api/settings")
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var current = data.activeCompetitors
+          ? data.activeCompetitors.split(",").filter(function (s: string) { return s.length > 0; })
+          : [];
+        setActiveCompetitors(current);
+        setThreshold(data.thresholdPct);
+        setSettingsLoaded(true);
+      });
+  }, []);
+
+  useEffect(function () {
     const t = setTimeout(function () { setDebouncedSearch(search); }, 350);
     return function () { clearTimeout(t); };
   }, [search]);
 
   useEffect(function () {
     setPage(1);
-  }, [debouncedSearch, category, status, selectedCompetitors, supplier]);
+  }, [debouncedSearch, category, status, supplier]);
 
   const loadStats = useCallback(async function () {
+    if (!settingsLoaded) return;
     setStatsLoading(true);
-    const params = new URLSearchParams({ competitors: selectedCompetitors.join(",") });
+    const params = new URLSearchParams({ competitors: activeCompetitors.join(",") });
     const res = await fetch("/api/stats?" + params.toString());
     const data = await res.json();
     setStats(data);
-    setThreshold(data.thresholdPct);
     setStatsLoading(false);
-  }, [selectedCompetitors]);
+  }, [settingsLoaded, activeCompetitors]);
 
   const loadRows = useCallback(async function () {
+    if (!settingsLoaded) return;
     setRowsLoading(true);
     const pageSize = execMode ? "20" : "50";
     const params = new URLSearchParams({
       search: debouncedSearch,
       category: category,
       status: status,
-      competitors: selectedCompetitors.join(","),
+      competitors: activeCompetitors.join(","),
       supplier: supplier,
       page: String(page),
       pageSize: pageSize,
@@ -100,7 +116,7 @@ export function Dashboard() {
     setTotal(data.total);
     setTotalPages(data.totalPages);
     setRowsLoading(false);
-  }, [debouncedSearch, category, status, selectedCompetitors, supplier, page, sortBy, sortDir, execMode]);
+  }, [settingsLoaded, debouncedSearch, category, status, activeCompetitors, supplier, page, sortBy, sortDir, execMode]);
 
   const loadIndustries = useCallback(async function () {
     const res = await fetch("/api/industries");
@@ -119,7 +135,7 @@ export function Dashboard() {
       search: debouncedSearch,
       category: category,
       status: status,
-      competitors: selectedCompetitors.join(","),
+      competitors: activeCompetitors.join(","),
       supplier: supplier,
       page: "1",
       pageSize: "5000",
@@ -129,7 +145,7 @@ export function Dashboard() {
     const res = await fetch("/api/products?" + params.toString());
     const data = await res.json();
     return data.rows as ProductRow[];
-  }, [debouncedSearch, category, status, selectedCompetitors, supplier, sortBy, sortDir]);
+  }, [debouncedSearch, category, status, activeCompetitors, supplier, sortBy, sortDir]);
 
   useEffect(function () { loadStats(); }, [loadStats]);
   useEffect(function () { loadRows(); }, [loadRows]);
@@ -168,6 +184,7 @@ export function Dashboard() {
 
   function handleCleared() {
     setClearOpen(false);
+    setActiveCompetitors([]);
     loadStats();
     loadRows();
     loadIndustries();
@@ -189,6 +206,13 @@ export function Dashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              href="/concorrentes"
+              className="flex items-center gap-1.5 rounded-lg border border-white/20 px-3 py-2 text-[11px] font-medium text-white/80 hover:bg-white/10"
+            >
+              <Users size={13} />
+              <span className="hidden sm:inline">Gerenciar Concorrentes</span>
+            </Link>
             <button
               onClick={function () { setExecMode(true); }}
               className="flex items-center gap-1.5 rounded-lg border border-white/20 px-3 py-2 text-[11px] font-medium text-white/80 hover:bg-white/10"
@@ -249,6 +273,21 @@ export function Dashboard() {
 
   var mainClass = "mx-auto flex max-w-[1800px] w-[95%] flex-col " + (execMode ? "gap-2 py-3" : "gap-4 py-6");
 
+  var competitorsBadge = null;
+  if (!execMode) {
+    var badgeText = activeCompetitors.length === 0 ? "Todos os concorrentes importados" : activeCompetitors.join(", ");
+    competitorsBadge = (
+      <div className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-[11px] shadow-card">
+        <span className="text-[#6B7280]">
+          Concorrentes ativos: <strong className="text-[#1F2937]">{badgeText}</strong>
+        </span>
+        <Link href="/concorrentes" className="font-medium text-accent hover:underline">
+          Gerenciar
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-surface">
       {headerBlock}
@@ -257,6 +296,8 @@ export function Dashboard() {
         {emptyStateBlock}
 
         <KpiCards stats={stats} loading={statsLoading} />
+
+        {competitorsBadge}
 
         {!execMode ? <CadgerInfoCard /> : null}
 
@@ -321,12 +362,9 @@ export function Dashboard() {
           onCategory={setCategory}
           status={status}
           onStatus={setStatus}
-          selectedCompetitors={selectedCompetitors}
-          onSelectedCompetitorsChange={setSelectedCompetitors}
           supplier={supplier}
           onSupplier={setSupplier}
           categories={stats ? stats.categories : []}
-          competitorNames={stats ? stats.competitorNames : []}
           supplierNames={stats ? stats.supplierNames : []}
           threshold={threshold}
           onThreshold={handleThresholdChange}
