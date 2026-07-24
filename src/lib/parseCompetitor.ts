@@ -7,6 +7,28 @@ export interface ParsedCompetitorRow {
   price: number | null;
 }
 
+var EAN_COLUMN_CANDIDATES = ["EAN", "Código EAN", "Codigo EAN", "COD EAN", "Cod EAN", "EAN13", "EAN 13"];
+
+function findEanValue(line: Record<string, unknown>): unknown {
+  for (var i = 0; i < EAN_COLUMN_CANDIDATES.length; i++) {
+    var key = EAN_COLUMN_CANDIDATES[i];
+    if (line[key] !== undefined && line[key] !== null && line[key] !== "") {
+      return line[key];
+    }
+  }
+  // Fallback: procura qualquer coluna cujo nome contenha "EAN"
+  var keys = Object.keys(line);
+  for (var j = 0; j < keys.length; j++) {
+    if (keys[j].toUpperCase().indexOf("EAN") !== -1) {
+      var value = line[keys[j]];
+      if (value !== undefined && value !== null && value !== "") {
+        return value;
+      }
+    }
+  }
+  return null;
+}
+
 export function parseCompetitorFile(buffer: Buffer): ParseResult<ParsedCompetitorRow> {
   const workbook = XLSX.read(buffer, { type: "buffer" });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -16,7 +38,7 @@ export function parseCompetitorFile(buffer: Buffer): ParseResult<ParsedCompetito
   let skipped = 0;
 
   for (const line of raw) {
-    const eanRaw = line["EAN"];
+    const eanRaw = findEanValue(line);
     const priceRaw = line["Valor final"];
     const descRaw = line["Descrição"];
 
@@ -30,10 +52,10 @@ export function parseCompetitorFile(buffer: Buffer): ParseResult<ParsedCompetito
 
     const price = toNumber(priceRaw);
 
-    rows.push({ ean, description, price: price !== null && price > 0 ? price : null });
+    rows.push({ ean: ean, description: description, price: price !== null && price > 0 ? price : null });
   }
 
-  return { rows, totalRows: raw.length, skipped };
+  return { rows: rows, totalRows: raw.length, skipped: skipped };
 }
 
 function normalizeEan(value: unknown): string | null {
@@ -48,6 +70,13 @@ function normalizeEan(value: unknown): string | null {
 
 function toNumber(value: unknown): number | null {
   if (value === null || value === undefined || value === "") return null;
-  const num = typeof value === "number" ? value : Number(String(value).replace(",", "."));
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  var cleaned = String(value)
+    .replace("R$", "")
+    .replace(/\s/g, "")
+    .replace(/\./g, "")
+    .replace(",", ".")
+    .trim();
+  const num = Number(cleaned);
   return Number.isFinite(num) ? num : null;
 }
