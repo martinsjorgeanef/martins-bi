@@ -7,23 +7,45 @@ export interface ParsedCompetitorRow {
   price: number | null;
 }
 
-var EAN_COLUMN_CANDIDATES = ["EAN", "Código EAN", "Codigo EAN", "COD EAN", "Cod EAN", "EAN13", "EAN 13"];
+function normalizeHeader(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .trim()
+    .replace(/\s+/g, " ");
+}
 
-function findEanValue(line: Record<string, unknown>): unknown {
-  for (var i = 0; i < EAN_COLUMN_CANDIDATES.length; i++) {
-    var key = EAN_COLUMN_CANDIDATES[i];
-    if (line[key] !== undefined && line[key] !== null && line[key] !== "") {
-      return line[key];
+function findColumnIndexes(headerRow: unknown[]): { ean: number; desc: number; price: number } {
+  var eanIdx = -1;
+  var descIdx = -1;
+  var priceIdx = -1;
+
+  for (var i = 0; i < headerRow.length; i++) {
+    var raw = headerRow[i];
+    if (typeof raw !== "string") continue;
+    var norm = normalizeHeader(raw);
+
+    if (eanIdx === -1 && norm.indexOf("EAN") !== -1) {
+      eanIdx = i;
+    }
+    if (descIdx === -1 && norm.indexOf("DESCRI") !== -1 && norm.indexOf("OFERTA") === -1) {
+      descIdx = i;
+    }
+    if (priceIdx === -1 && norm.indexOf("VALOR FINAL") !== -1) {
+      priceIdx = i;
     }
   }
-  // Fallback: procura qualquer coluna cujo nome contenha "EAN"
-  var keys = Object.keys(line);
-  for (var j = 0; j < keys.length; j++) {
-    if (keys[j].toUpperCase().indexOf("EAN") !== -1) {
-      var value = line[keys[j]];
-      if (value !== undefined && value !== null && value !== "") {
-        return value;
-      }
+
+  return { ean: eanIdx, desc: descIdx, price: priceIdx };
+}
+
+function findHeaderRow(allRows: unknown[][]): { rowIndex: number; cols: { ean: number; desc: number; price: number } } | null {
+  var limit = Math.min(allRows.length, 15);
+  for (var r = 0; r < limit; r++) {
+    var cols = findColumnIndexes(allRows[r]);
+    if (cols.ean !== -1 && cols.price !== -1) {
+      return { rowIndex: r, cols: cols };
     }
   }
   return null;
@@ -32,30 +54,40 @@ function findEanValue(line: Record<string, unknown>): unknown {
 export function parseCompetitorFile(buffer: Buffer): ParseResult<ParsedCompetitorRow> {
   const workbook = XLSX.read(buffer, { type: "buffer" });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: null });
+  const allRows: unknown[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
 
   const rows: ParsedCompetitorRow[] = [];
   let skipped = 0;
 
-  for (const line of raw) {
-    const eanRaw = findEanValue(line);
-    const priceRaw = line["Valor final"];
-    const descRaw = line["Descrição"];
+  const headerInfo = findHeaderRow(allRows);
+  if (!headerInfo) {
+    return { rows: [], totalRows: 0, skipped: allRows.length };
+  }
 
-    const ean = normalizeEan(eanRaw);
-    const description = typeof descRaw === "string" ? descRaw.trim() : "";
+  var eanIdx = headerInfo.cols.ean;
+  var descIdx = headerInfo.cols.desc;
+  var priceIdx = headerInfo.cols.price;
+  var dataRows = allRows.slice(headerInfo.rowIndex + 1);
 
-    if (!ean || !description) {
+  for (const line of dataRows) {
+    var eanRaw = line[eanIdx];
+    var descRaw = descIdx !== -1 ? line[descIdx] : null;
+    var priceRaw = line[priceIdx];
+
+    var ean = normalizeEan(eanRaw);
+    var description = typeof descRaw === "string" ? descRaw.trim() : "";
+
+    if (!ean) {
       skipped++;
       continue;
     }
 
-    const price = toNumber(priceRaw);
+    var price = toNumber(priceRaw);
 
     rows.push({ ean: ean, description: description, price: price !== null && price > 0 ? price : null });
   }
 
-  return { rows: rows, totalRows: raw.length, skipped: skipped };
+  return { rows: rows, totalRows: dataRows.length, skipped: skipped };
 }
 
 function normalizeEan(value: unknown): string | null {
