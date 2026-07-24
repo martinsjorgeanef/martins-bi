@@ -58,16 +58,16 @@ export function Dashboard() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [execMode, setExecMode] = useState(false);
 
-  useEffect(() => {
+  useEffect(function () {
     const t = setTimeout(function () { setDebouncedSearch(search); }, 350);
     return function () { clearTimeout(t); };
   }, [search]);
 
-  useEffect(() => {
+  useEffect(function () {
     setPage(1);
   }, [debouncedSearch, category, status, competitor, supplier]);
 
-  const loadStats = useCallback(async () => {
+  const loadStats = useCallback(async function () {
     setStatsLoading(true);
     const res = await fetch("/api/stats");
     const data = await res.json();
@@ -76,7 +76,7 @@ export function Dashboard() {
     setStatsLoading(false);
   }, []);
 
-  const loadRows = useCallback(async () => {
+  const loadRows = useCallback(async function () {
     setRowsLoading(true);
     const pageSize = execMode ? "20" : "50";
     const params = new URLSearchParams({
@@ -98,19 +98,19 @@ export function Dashboard() {
     setRowsLoading(false);
   }, [debouncedSearch, category, status, competitor, supplier, page, sortBy, sortDir, execMode]);
 
-  const loadIndustries = useCallback(async () => {
+  const loadIndustries = useCallback(async function () {
     const res = await fetch("/api/industries");
     const data = await res.json();
     setIndustries(data.industries || []);
   }, []);
 
-  const loadCategories = useCallback(async () => {
+  const loadCategories = useCallback(async function () {
     const res = await fetch("/api/categories");
     const data = await res.json();
     setCategories(data.categories || []);
   }, []);
 
-  const fetchAllFilteredRows = useCallback(async (): Promise<ProductRow[]> => {
+  const fetchAllFilteredRows = useCallback(async function () {
     const params = new URLSearchParams({
       search: debouncedSearch,
       category: category,
@@ -127,10 +127,10 @@ export function Dashboard() {
     return data.rows as ProductRow[];
   }, [debouncedSearch, category, status, competitor, supplier, sortBy, sortDir]);
 
-  useEffect(() => { loadStats(); }, [loadStats]);
-  useEffect(() => { loadRows(); }, [loadRows]);
-  useEffect(() => { loadIndustries(); }, [loadIndustries]);
-  useEffect(() => { loadCategories(); }, [loadCategories]);
+  useEffect(function () { loadStats(); }, [loadStats]);
+  useEffect(function () { loadRows(); }, [loadRows]);
+  useEffect(function () { loadIndustries(); }, [loadIndustries]);
+  useEffect(function () { loadCategories(); }, [loadCategories]);
 
   function handleSort(field: string) {
     if (field === sortBy) {
@@ -162,67 +162,81 @@ export function Dashboard() {
     loadCategories();
   }
 
-  return (
-    <div className="min-h-screen bg-surface">
-      {!execMode ? (
-        <header className="sticky top-0 z-30 border-b border-line bg-ink-950">
-          <div className="mx-auto flex max-w-[1800px] w-[95%] items-center justify-between py-3">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
-                <BarChart3 size={18} className="text-white" />
-              </div>
-              <div>
-                <h1 className="text-[13px] font-semibold leading-tight text-white">Painel de Competitividade</h1>
-                <p className="text-[9px] leading-tight text-white/50">Martins x Mercado</p>
-              </div>
+  var headerBlock = null;
+  if (!execMode) {
+    headerBlock = (
+      <header className="sticky top-0 z-30 border-b border-line bg-ink-950">
+        <div className="mx-auto flex max-w-[1800px] w-[95%] items-center justify-between py-3">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
+              <BarChart3 size={18} className="text-white" />
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={function () { setExecMode(true); }}
-                className="flex items-center gap-1.5 rounded-lg border border-white/20 px-3 py-2 text-[11px] font-medium text-white/80 hover:bg-white/10"
-              >
-                <Maximize2 size={13} />
-                <span className="hidden sm:inline">Modo Executivo</span>
-              </button>
-              <button
-                onClick={function () { setUploadOpen(true); }}
-                className="flex items-center gap-2 rounded-lg bg-accent px-3.5 py-2 text-[11px] font-medium text-white transition hover:bg-accent-dark"
-              >
-                <UploadCloud size={14} />
-                <span className="hidden sm:inline">Enviar planilha</span>
-              </button>
+            <div>
+              <h1 className="text-[13px] font-semibold leading-tight text-white">Painel de Competitividade</h1>
+              <p className="text-[9px] leading-tight text-white/50">Martins x Mercado</p>
             </div>
           </div>
-        </header>
-      ) : (
-        <div className="sticky top-0 z-30 flex justify-end border-b border-line bg-white/90 px-3 py-1.5 backdrop-blur">
-          <button
-            onClick={function () { setExecMode(false); }}
-            className="flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1 text-[11px] font-medium text-ink-700 hover:bg-surface"
-          >
-            <Minimize2 size={12} />
-            Sair do Modo Executivo
-          </button>
-        </div>
-      )}
-
-      <main className={"mx-auto flex max-w-[1800px] w-[95%] flex-col " + (execMode ? "gap-2 py-3" : "gap-4 py-6")}>
-        {!statsLoading && stats && stats.matchedProducts === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-xl bg-white p-10 text-center shadow-card">
-            <UploadCloud size={26} className="text-accent" />
-            <h2 className="text-[12px] font-semibold text-[#1F2937]">Nenhum dado carregado ainda</h2>
-            <p className="max-w-md text-[11px] text-[#6B7280]">
-              Envie primeiro a planilha de precos da Martins e depois a planilha de um concorrente para comecar a
-              comparar precos.
-            </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={function () { setExecMode(true); }}
+              className="flex items-center gap-1.5 rounded-lg border border-white/20 px-3 py-2 text-[11px] font-medium text-white/80 hover:bg-white/10"
+            >
+              <Maximize2 size={13} />
+              <span className="hidden sm:inline">Modo Executivo</span>
+            </button>
             <button
               onClick={function () { setUploadOpen(true); }}
-              className="mt-1 rounded-lg bg-accent px-4 py-2 text-[11px] font-semibold text-white hover:bg-accent-dark"
+              className="flex items-center gap-2 rounded-lg bg-accent px-3.5 py-2 text-[11px] font-medium text-white transition hover:bg-accent-dark"
             >
-              Enviar primeira planilha
+              <UploadCloud size={14} />
+              <span className="hidden sm:inline">Enviar planilha</span>
             </button>
           </div>
-        ) : null}
+        </div>
+      </header>
+    );
+  } else {
+    headerBlock = (
+      <div className="sticky top-0 z-30 flex justify-end border-b border-line bg-white/90 px-3 py-1.5 backdrop-blur">
+        <button
+          onClick={function () { setExecMode(false); }}
+          className="flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1 text-[11px] font-medium text-ink-700 hover:bg-surface"
+        >
+          <Minimize2 size={12} />
+          Sair do Modo Executivo
+        </button>
+      </div>
+    );
+  }
+
+  var emptyStateBlock = null;
+  if (!statsLoading && stats && stats.matchedProducts === 0) {
+    emptyStateBlock = (
+      <div className="flex flex-col items-center gap-3 rounded-xl bg-white p-10 text-center shadow-card">
+        <UploadCloud size={26} className="text-accent" />
+        <h2 className="text-[12px] font-semibold text-[#1F2937]">Nenhum dado carregado ainda</h2>
+        <p className="max-w-md text-[11px] text-[#6B7280]">
+          Envie primeiro a planilha de precos da Martins e depois a planilha de um concorrente para comecar a
+          comparar precos.
+        </p>
+        <button
+          onClick={function () { setUploadOpen(true); }}
+          className="mt-1 rounded-lg bg-accent px-4 py-2 text-[11px] font-semibold text-white hover:bg-accent-dark"
+        >
+          Enviar primeira planilha
+        </button>
+      </div>
+    );
+  }
+
+  var mainClass = "mx-auto flex max-w-[1800px] w-[95%] flex-col " + (execMode ? "gap-2 py-3" : "gap-4 py-6");
+
+  return (
+    <div className="min-h-screen bg-surface">
+      {headerBlock}
+
+      <main className={mainClass}>
+        {emptyStateBlock}
 
         <KpiCards stats={stats} loading={statsLoading} />
 
@@ -262,3 +276,49 @@ export function Dashboard() {
         {!execMode ? (
           <div className="rounded-xl bg-white p-4 shadow-card">
             <h3 className="text-[12px] font-semibold text-[#1F2937]">Categorias</h3>
+            <p className="mt-0.5 text-[11px] text-[#94A3B8]">Da pior para a melhor posicionamento de mercado</p>
+            <div className="mt-3">
+              <CategoryTable categories={categories} />
+            </div>
+          </div>
+        ) : null}
+
+        <Filters
+          search={search}
+          onSearch={setSearch}
+          category={category}
+          onCategory={setCategory}
+          status={status}
+          onStatus={setStatus}
+          competitor={competitor}
+          onCompetitor={setCompetitor}
+          supplier={supplier}
+          onSupplier={setSupplier}
+          categories={stats ? stats.categories : []}
+          competitorNames={stats ? stats.competitorNames : []}
+          supplierNames={stats ? stats.supplierNames : []}
+          threshold={threshold}
+          onThreshold={handleThresholdChange}
+        />
+
+        <div className="flex justify-end">
+          <ExportButtons fetchAllRows={fetchAllFilteredRows} />
+        </div>
+
+        <ProductsTable
+          rows={rows}
+          loading={rowsLoading}
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          onPage={setPage}
+          sortBy={sortBy}
+          sortDir={sortDir}
+          onSort={handleSort}
+        />
+      </main>
+
+      <UploadPanel open={uploadOpen} onClose={function () { setUploadOpen(false); }} onSuccess={handleUploadSuccess} />
+    </div>
+  );
+}
