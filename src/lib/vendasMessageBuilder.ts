@@ -21,18 +21,19 @@ function emojiFor(category: string): string {
 export function buildVendasMessage(items: DisadvantageItem[], industryName: string | null, mode: VendasMode) {
   var subject =
     mode === "completo" ? "Catalogo Completo - Martins" : "Oportunidades Comerciais - Vantagem Competitiva Martins";
-  var groups = buildVendasGroups(items, mode);
+  var groups = buildVendasGroups(items);
   var limit = mode === "completo" ? Infinity : MAX_ITEMS_PER_LINE;
 
   var lines: string[] = [];
   lines.push(mode === "completo" ? "📖 CATALOGO COMPLETO" : "🔥 OPORTUNIDADES DO DIA 🔥");
   if (industryName) {
-    lines.push("🏭 INDUSTRIA: " + industryName.toUpperCase());
+    lines.push("🏭 " + industryName);
   }
   lines.push("");
   lines.push("✅ Nota RJ");
   lines.push("✅ Prazo 45D");
-  lines.push("✅ Todos os precos sao unitarios");
+  lines.push("✅ Precos unitarios");
+  lines.push("────────────────────");
   lines.push("");
 
   groups.categoryNames.forEach(function (category) {
@@ -40,19 +41,16 @@ export function buildVendasMessage(items: DisadvantageItem[], industryName: stri
     lines.push("");
 
     var brandMap = groups.byCategory.get(category) as Map<string, Map<string, { label: string; price: number | undefined }[]>>;
-    var tipoMap = groups.tipoByCategoryBrand.get(category);
 
     Array.from(brandMap.keys()).sort().forEach(function (brand) {
       lines.push(brand.toUpperCase());
+      lines.push("");
 
-      var uniformTipo = tipoMap ? tipoMap.get(brand) : null;
-      if (uniformTipo) {
-        lines.push(uniformTipo);
-      }
+      var headerMap = brandMap.get(brand) as Map<string, { label: string; price: number | undefined }[]>;
+      Array.from(headerMap.keys()).sort().forEach(function (header) {
+        lines.push(header);
 
-      var lineMap = brandMap.get(brand) as Map<string, { label: string; price: number | undefined }[]>;
-      Array.from(lineMap.keys()).sort().forEach(function (lineKey) {
-        var variants = lineMap.get(lineKey) as { label: string; price: number | undefined }[];
+        var variants = headerMap.get(header) as { label: string; price: number | undefined }[];
         var shown = isFinite(limit) ? variants.slice(0, limit) : variants;
         var remaining = variants.length - shown.length;
 
@@ -63,8 +61,8 @@ export function buildVendasMessage(items: DisadvantageItem[], industryName: stri
         if (remaining > 0) {
           lines.push("  (+" + remaining + " itens disponiveis)");
         }
+        lines.push("");
       });
-      lines.push("");
     });
   });
 
