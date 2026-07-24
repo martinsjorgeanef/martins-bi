@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { MessageCircle } from "lucide-react";
 import { DisadvantageItem } from "./Charts";
 import { SalesMessageModal } from "./SalesMessageModal";
-import { cleanProductName } from "@/lib/productNameCleaner";
+import { buildVendasGroups, MAX_ITEMS_PER_LINE } from "@/lib/vendasGrouping";
 
 function money(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -21,11 +21,6 @@ var CATEGORY_EMOJI: Record<string, string> = {
 function emojiFor(category: string): string {
   var key = category.toUpperCase();
   return CATEGORY_EMOJI[key] || "🛍️";
-}
-
-interface VariantLine {
-  weight: string | null;
-  price: number | undefined;
 }
 
 export function VendasReport() {
@@ -56,34 +51,7 @@ export function VendasReport() {
     );
   }
 
-  var byCategory = new Map<string, Map<string, Map<string, VariantLine[]>>>();
-  var byCategoryFlat = new Map<string, Map<string, VariantLine[]>>();
-
-  items.forEach(function (it) {
-    var category = it.category ? it.category : "Sem categoria";
-    var cleaned = cleanProductName(it.description);
-    var line = cleaned.weight ? cleaned.descriptor + " " + cleaned.weight : cleaned.descriptor;
-    var label = line.trim().length > 0 ? line.trim() : cleaned.weight || "";
-
-    if (cleaned.linha) {
-      if (!byCategory.has(category)) byCategory.set(category, new Map());
-      var brandMapBuild = byCategory.get(category) as Map<string, Map<string, VariantLine[]>>;
-      if (!brandMapBuild.has(cleaned.brand)) brandMapBuild.set(cleaned.brand, new Map());
-      var lineMapBuild = brandMapBuild.get(cleaned.brand) as Map<string, VariantLine[]>;
-      if (!lineMapBuild.has(cleaned.linha)) lineMapBuild.set(cleaned.linha, []);
-      (lineMapBuild.get(cleaned.linha) as VariantLine[]).push({ weight: cleaned.weight, price: it.martinsPrice });
-    } else {
-      if (!byCategoryFlat.has(category)) byCategoryFlat.set(category, new Map());
-      var flatBrandMapBuild = byCategoryFlat.get(category) as Map<string, VariantLine[]>;
-      if (!flatBrandMapBuild.has(cleaned.brand)) flatBrandMapBuild.set(cleaned.brand, []);
-      (flatBrandMapBuild.get(cleaned.brand) as VariantLine[]).push({ weight: cleaned.weight, price: it.martinsPrice });
-    }
-  });
-
-  var allCategoryNames = new Set<string>();
-  Array.from(byCategory.keys()).forEach(function (c) { allCategoryNames.add(c); });
-  Array.from(byCategoryFlat.keys()).forEach(function (c) { allCategoryNames.add(c); });
-  var categoryNames = Array.from(allCategoryNames).sort();
+  var groups = buildVendasGroups(items);
 
   return (
     <div className="mx-auto flex max-w-[1400px] w-[95%] flex-col gap-3 py-6">
@@ -93,6 +61,7 @@ export function VendasReport() {
           {industryName ? (
             <p className="mt-0.5 text-[10px] font-medium text-[#2563EB]">🏭 Industria: {industryName}</p>
           ) : null}
+          <p className="mt-0.5 text-[9px] text-[#94A3B8]">Todos os precos exibidos sao unitarios.</p>
         </div>
         <button
           onClick={function () { setMessageOpen(true); }}
@@ -103,15 +72,17 @@ export function VendasReport() {
         </button>
       </div>
 
-      {categoryNames.length === 0 ? (
+      {groups.categoryNames.length === 0 ? (
         <div className="rounded-xl bg-white p-6 text-center shadow-card">
           <p className="text-[11px] text-ink-600">Nenhuma oportunidade identificada no momento.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {categoryNames.map(function (category) {
-            var brandMap = byCategory.get(category);
-            var flatBrandMap = byCategoryFlat.get(category);
+          {groups.categoryNames.map(function (category) {
+            var brandMap = groups.byCategory.get(category);
+            var tipoMap = groups.tipoByCategoryBrand.get(category);
+            if (!brandMap) return null;
+            var brandNames = Array.from(brandMap.keys()).sort();
 
             return (
               <div key={category} className="rounded-xl bg-white p-3.5 shadow-card">
@@ -120,62 +91,40 @@ export function VendasReport() {
                 </h2>
 
                 <div className="mt-2 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {brandMap
-                    ? Array.from(brandMap.keys())
-                        .sort()
-                        .map(function (brand) {
-                          var safeBrandMap = brandMap as Map<string, Map<string, VariantLine[]>>;
-                          var lineMap = safeBrandMap.get(brand) as Map<string, VariantLine[]>;
-                          var lineNames = Array.from(lineMap.keys()).sort();
-                          return lineNames.map(function (lineName) {
-                            var variants = lineMap.get(lineName) as VariantLine[];
-                            return (
-                              <div key={brand + "-" + lineName} className="border-b border-line/40 pb-1.5">
-                                <div className="text-[9px] font-bold uppercase tracking-wide text-[#2563EB]">{brand}</div>
-                                <div className="text-[10px] font-medium text-[#1F2937]">{lineName}</div>
-                                <ul className="mt-0.5">
-                                  {variants.map(function (v, idx) {
-                                    return (
-                                      <li key={idx} className="flex items-center justify-between text-[10px] text-[#6B7280]">
-                                        <span>{v.weight ? v.weight : "-"}</span>
-                                        <span className="font-bold text-good">
-                                          {v.price !== undefined ? money(v.price) : "-"}
-                                        </span>
-                                      </li>
-                                    );
-                                  })}
-                                </ul>
-                              </div>
-                            );
-                          });
-                        })
-                    : null}
+                  {brandNames.map(function (brand) {
+                    var lineMap = brandMap.get(brand) as Map<string, { label: string; price: number | undefined }[]>;
+                    var lineKeys = Array.from(lineMap.keys()).sort();
+                    var uniformTipo = tipoMap ? tipoMap.get(brand) : null;
 
-                  {flatBrandMap
-                    ? Array.from(flatBrandMap.keys())
-                        .sort()
-                        .map(function (brand) {
-                          var safeFlatBrandMap = flatBrandMap as Map<string, VariantLine[]>;
-                          var arr = safeFlatBrandMap.get(brand) as VariantLine[];
-                          return (
-                            <div key={brand} className="border-b border-line/40 pb-1.5">
-                              <div className="text-[9px] font-bold uppercase tracking-wide text-[#2563EB]">{brand}</div>
-                              <ul className="mt-0.5">
-                                {arr.map(function (v, idx) {
-                                  return (
-                                    <li key={idx} className="flex items-center justify-between text-[10px] text-[#6B7280]">
-                                      <span>{v.weight ? v.weight : "-"}</span>
-                                      <span className="font-bold text-good">
-                                        {v.price !== undefined ? money(v.price) : "-"}
-                                      </span>
-                                    </li>
-                                  );
-                                })}
-                              </ul>
-                            </div>
-                          );
-                        })
-                    : null}
+                    return lineKeys.map(function (lineKey) {
+                      var variants = lineMap.get(lineKey) as { label: string; price: number | undefined }[];
+                      var shown = variants.slice(0, MAX_ITEMS_PER_LINE);
+                      var remaining = variants.length - shown.length;
+
+                      return (
+                        <div key={brand + "-" + lineKey} className="border-b border-line/40 pb-1.5">
+                          <div className="text-[9px] font-bold uppercase tracking-wide text-[#2563EB]">{brand}</div>
+                          {uniformTipo ? <div className="text-[9px] text-[#94A3B8]">{uniformTipo}</div> : null}
+                          <div className="text-[10px] font-medium text-[#1F2937]">{lineKey}</div>
+                          <ul className="mt-0.5">
+                            {shown.map(function (v, idx) {
+                              return (
+                                <li key={idx} className="flex items-center justify-between text-[10px] text-[#6B7280]">
+                                  <span>{v.label}</span>
+                                  <span className="font-bold text-good">
+                                    {v.price !== undefined ? money(v.price) : "-"}
+                                  </span>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                          {remaining > 0 ? (
+                            <div className="mt-0.5 text-[9px] text-[#94A3B8]">+{remaining} itens disponiveis</div>
+                          ) : null}
+                        </div>
+                      );
+                    });
+                  })}
                 </div>
               </div>
             );
