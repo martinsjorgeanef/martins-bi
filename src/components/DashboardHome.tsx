@@ -5,8 +5,10 @@ import Link from "next/link";
 import { KpiCards } from "./KpiCards";
 import { CadgerInfoCard } from "./CadgerInfoCard";
 import { RecoveryPotentialCard } from "./RecoveryPotentialCard";
+import { ExecutiveSummary } from "./ExecutiveSummary";
+import { CategoryTable } from "./CategoryTable";
 import { TopDisadvantageChart } from "./Charts";
-import { DashboardStats } from "@/lib/types";
+import { DashboardStats, IndustryRow, CategoryRow } from "@/lib/types";
 import { ArrowRight } from "lucide-react";
 
 interface StatsResponse extends DashboardStats {
@@ -25,21 +27,32 @@ interface StatsResponse extends DashboardStats {
 
 export function DashboardHome() {
   const [stats, setStats] = useState<StatsResponse | null>(null);
+  const [industries, setIndustries] = useState<IndustryRow[]>([]);
+  const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const loadStats = useCallback(async function () {
+  const loadAll = useCallback(async function () {
     setLoading(true);
     const settingsRes = await fetch("/api/settings");
     const settingsData = await settingsRes.json();
     const activeCompetitors = settingsData.activeCompetitors || "";
     const params = new URLSearchParams({ competitors: activeCompetitors });
-    const res = await fetch("/api/stats?" + params.toString());
-    const data = await res.json();
-    setStats(data);
+
+    const statsRes = await fetch("/api/stats?" + params.toString());
+    const industriesRes = await fetch("/api/industries");
+    const categoriesRes = await fetch("/api/categories");
+
+    const statsData = await statsRes.json();
+    const industriesData = await industriesRes.json();
+    const categoriesData = await categoriesRes.json();
+
+    setStats(statsData);
+    setIndustries(industriesData.industries || []);
+    setCategories(categoriesData.categories || []);
     setLoading(false);
   }, []);
 
-  useEffect(function () { loadStats(); }, [loadStats]);
+  useEffect(function () { loadAll(); }, [loadAll]);
 
   return (
     <div className="mx-auto flex max-w-[1400px] w-[95%] flex-col gap-4 py-6">
@@ -69,7 +82,17 @@ export function DashboardHome() {
         />
       ) : null}
 
+      {stats ? <ExecutiveSummary stats={stats} industries={industries} categories={categories} /> : null}
+
       {stats ? <TopDisadvantageChart data={stats.topDisadvantage} /> : null}
+
+      <div className="rounded-xl bg-white p-4 shadow-card">
+        <h3 className="text-[12px] font-semibold text-[#1F2937]">Categorias</h3>
+        <p className="mt-0.5 text-[11px] text-[#94A3B8]">Da pior para a melhor posicionamento de mercado</p>
+        <div className="mt-3">
+          <CategoryTable categories={categories} />
+        </div>
+      </div>
     </div>
   );
 }
