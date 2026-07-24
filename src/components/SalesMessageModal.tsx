@@ -4,17 +4,20 @@ import { useMemo, useState } from "react";
 import { X, Copy, Check, Mail, MessageCircle } from "lucide-react";
 import { DisadvantageItem } from "./Charts";
 import { buildVendasMessage } from "@/lib/vendasMessageBuilder";
+import { VendasMode } from "@/lib/vendasGrouping";
 
 interface Props {
   open: boolean;
   onClose: () => void;
   items: DisadvantageItem[];
   industryName: string | null;
+  initialMode?: VendasMode;
 }
 
-export function SalesMessageModal({ open, onClose, items, industryName }: Props) {
+export function SalesMessageModal({ open, onClose, items, industryName, initialMode }: Props) {
   const [copied, setCopied] = useState(false);
-  const message = useMemo(function () { return buildVendasMessage(items, industryName); }, [items, industryName]);
+  const [mode, setMode] = useState<VendasMode>(initialMode || "resumida");
+  const message = useMemo(function () { return buildVendasMessage(items, industryName, mode); }, [items, industryName, mode]);
 
   if (!open) return null;
 
@@ -41,6 +44,27 @@ export function SalesMessageModal({ open, onClose, items, industryName }: Props)
           <h2 className="text-[16px] font-semibold text-[#1F2937]">Mensagem para o Time de Vendas</h2>
           <button onClick={onClose} className="rounded-lg p-1 text-ink-500 hover:bg-surface">
             <X size={18} />
+          </button>
+        </div>
+
+        <div className="mt-3 flex gap-2">
+          <button
+            onClick={function () { setMode("resumida"); }}
+            className={
+              "flex-1 rounded-lg border py-1.5 text-[12px] font-semibold " +
+              (mode === "resumida" ? "border-accent bg-accent/10 text-accent-dark" : "border-line text-ink-600")
+            }
+          >
+            Mensagem Resumida (WhatsApp)
+          </button>
+          <button
+            onClick={function () { setMode("completo"); }}
+            className={
+              "flex-1 rounded-lg border py-1.5 text-[12px] font-semibold " +
+              (mode === "completo" ? "border-accent bg-accent/10 text-accent-dark" : "border-line text-ink-600")
+            }
+          >
+            Catalogo Completo
           </button>
         </div>
 
