@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Search, Users, ShoppingCart, Megaphone, History, Settings, BarChart3 } from "lucide-react";
+import { LayoutDashboard, Search, Users, Briefcase, Megaphone, History, Settings, BarChart3 } from "lucide-react";
 
 var NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/produtos", label: "Analise de Produtos", icon: Search },
-  { href: "/concorrentes", label: "Concorrentes", icon: Users },
-  { href: "/compras", label: "Compras", icon: ShoppingCart },
+  { href: "/produtos", label: "Analise Produtos", icon: Search },
+  { href: "/compras", label: "Analise para Compradores", icon: Briefcase },
   { href: "/vendas", label: "Vendas", icon: Megaphone },
+  { href: "/concorrentes", label: "Concorrentes", icon: Users },
   { href: "/historico", label: "Historico", icon: History },
   { href: "/configuracoes", label: "Configuracoes", icon: Settings }
 ];
