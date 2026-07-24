@@ -7,7 +7,7 @@ export async function POST() {
   try {
     await prisma.competitorPrice.deleteMany({});
     await prisma.competitorCatalogItem.deleteMany({});
-    await prisma.cadgerItem.deleteMany({});
+    
     await prisma.product.deleteMany({});
     await prisma.uploadLog.deleteMany({});
     await prisma.settings.upsert({
