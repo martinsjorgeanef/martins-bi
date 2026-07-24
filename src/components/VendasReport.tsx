@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { ArrowLeft, MessageCircle } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { DisadvantageItem } from "./Charts";
 import { SalesMessageModal } from "./SalesMessageModal";
 import { cleanProductName } from "@/lib/productNameCleaner";
@@ -24,8 +23,8 @@ function emojiFor(category: string): string {
   return CATEGORY_EMOJI[key] || "🛍️";
 }
 
-interface FlatItem {
-  label: string;
+interface VariantLine {
+  weight: string | null;
   price: number | undefined;
 }
 
@@ -51,14 +50,14 @@ export function VendasReport() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-8">
-        <p className="text-[14px] text-ink-600">Carregando...</p>
+      <div className="mx-auto max-w-3xl px-4 py-8">
+        <p className="text-[13px] text-ink-600">Carregando...</p>
       </div>
     );
   }
 
-  var byCategory = new Map<string, Map<string, Map<string, FlatItem[]>>>();
-  var byCategoryFlat = new Map<string, Map<string, FlatItem[]>>();
+  var byCategory = new Map<string, Map<string, Map<string, VariantLine[]>>>();
+  var byCategoryFlat = new Map<string, Map<string, VariantLine[]>>();
 
   items.forEach(function (it) {
     var category = it.category ? it.category : "Sem categoria";
@@ -68,17 +67,16 @@ export function VendasReport() {
 
     if (cleaned.linha) {
       if (!byCategory.has(category)) byCategory.set(category, new Map());
-      var brandMap = byCategory.get(category) as Map<string, Map<string, FlatItem[]>>;
-      if (!brandMap.has(cleaned.brand)) brandMap.set(cleaned.brand, new Map());
-      var lineMap = brandMap.get(cleaned.brand) as Map<string, FlatItem[]>;
-      if (!lineMap.has(cleaned.linha)) lineMap.set(cleaned.linha, []);
-      (lineMap.get(cleaned.linha) as FlatItem[]).push({ label: label, price: it.martinsPrice });
+      var brandMapBuild = byCategory.get(category) as Map<string, Map<string, VariantLine[]>>;
+      if (!brandMapBuild.has(cleaned.brand)) brandMapBuild.set(cleaned.brand, new Map());
+      var lineMapBuild = brandMapBuild.get(cleaned.brand) as Map<string, VariantLine[]>;
+      if (!lineMapBuild.has(cleaned.linha)) lineMapBuild.set(cleaned.linha, []);
+      (lineMapBuild.get(cleaned.linha) as VariantLine[]).push({ weight: cleaned.weight, price: it.martinsPrice });
     } else {
       if (!byCategoryFlat.has(category)) byCategoryFlat.set(category, new Map());
-      var flatBrandMapBuild = byCategoryFlat.get(category) as Map<string, FlatItem[]>;
+      var flatBrandMapBuild = byCategoryFlat.get(category) as Map<string, VariantLine[]>;
       if (!flatBrandMapBuild.has(cleaned.brand)) flatBrandMapBuild.set(cleaned.brand, []);
-      var flatLabel = cleaned.tipo ? cleaned.tipo + " " + label : label;
-      (flatBrandMapBuild.get(cleaned.brand) as FlatItem[]).push({ label: flatLabel, price: it.martinsPrice });
+      (flatBrandMapBuild.get(cleaned.brand) as VariantLine[]).push({ weight: cleaned.weight, price: it.martinsPrice });
     }
   });
 
@@ -88,97 +86,60 @@ export function VendasReport() {
   var categoryNames = Array.from(allCategoryNames).sort();
 
   return (
-    <div className="min-h-screen bg-surface">
-      <header className="border-b border-line bg-ink-950 px-4 py-3">
-        <div className="mx-auto flex max-w-2xl items-center justify-between gap-2">
-          <Link href="/" className="flex items-center gap-1.5 text-[13px] text-white/70 hover:text-white">
-            <ArrowLeft size={15} />
-            Voltar ao painel
-          </Link>
-          <button
-            onClick={function () { setMessageOpen(true); }}
-            className="flex items-center gap-1.5 rounded-lg bg-good px-3 py-2 text-[13px] font-semibold text-white hover:opacity-90"
-          >
-            <MessageCircle size={15} />
-            Gerar mensagem para Vendas
-          </button>
+    <div className="mx-auto flex max-w-[1400px] w-[95%] flex-col gap-3 py-6">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-[16px] font-bold text-[#1F2937]">Vendas</h1>
+          {industryName ? (
+            <p className="mt-0.5 text-[10px] font-medium text-[#2563EB]">🏭 Industria: {industryName}</p>
+          ) : null}
         </div>
-      </header>
+        <button
+          onClick={function () { setMessageOpen(true); }}
+          className="flex items-center gap-1.5 rounded-lg bg-good px-3.5 py-2 text-[11px] font-bold text-white hover:opacity-90"
+        >
+          <MessageCircle size={13} />
+          Gerar mensagem para Vendas
+        </button>
+      </div>
 
-      <main className="mx-auto max-w-2xl px-4 py-6">
-        <h1 className="text-[20px] font-bold text-[#1F2937]">🔥 Oportunidades do Dia</h1>
-        {industryName ? (
-          <p className="mt-1 text-[13px] font-medium text-[#2563EB]">🏭 Industria: {industryName}</p>
-        ) : null}
+      {categoryNames.length === 0 ? (
+        <div className="rounded-xl bg-white p-6 text-center shadow-card">
+          <p className="text-[11px] text-ink-600">Nenhuma oportunidade identificada no momento.</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {categoryNames.map(function (category) {
+            var brandMap = byCategory.get(category);
+            var flatBrandMap = byCategoryFlat.get(category);
 
-        {categoryNames.length === 0 ? (
-          <div className="mt-4 rounded-xl bg-white p-6 text-center shadow-card">
-            <p className="text-[13px] text-ink-600">Nenhuma oportunidade identificada no momento.</p>
-          </div>
-        ) : (
-          <div className="mt-4 flex flex-col gap-4">
-            {categoryNames.map(function (category) {
-              var brandMap = byCategory.get(category);
-              var flatBrandMap = byCategoryFlat.get(category);
+            return (
+              <div key={category} className="rounded-xl bg-white p-3.5 shadow-card">
+                <h2 className="text-[13px] font-bold text-[#1F2937]">
+                  {emojiFor(category)} {category.toUpperCase()}
+                </h2>
 
-              return (
-                <div key={category} className="rounded-xl bg-white p-4 shadow-card">
-                  <h2 className="text-[16px] font-bold text-[#1F2937]">
-                    {emojiFor(category)} {category.toUpperCase()}
-                  </h2>
-
-                  <div className="mt-3 flex flex-col gap-3">
-                    {brandMap
-                      ? Array.from(brandMap.keys())
-                          .sort()
-                          .map(function (brand) {
-                            var safeBrandMap = brandMap as Map<string, Map<string, FlatItem[]>>;
-                            var lineMap = safeBrandMap.get(brand) as Map<string, FlatItem[]>;
-                            var lineNames = Array.from(lineMap.keys()).sort();
+                <div className="mt-2 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {brandMap
+                    ? Array.from(brandMap.keys())
+                        .sort()
+                        .map(function (brand) {
+                          var safeBrandMap = brandMap as Map<string, Map<string, VariantLine[]>>;
+                          var lineMap = safeBrandMap.get(brand) as Map<string, VariantLine[]>;
+                          var lineNames = Array.from(lineMap.keys()).sort();
+                          return lineNames.map(function (lineName) {
+                            var variants = lineMap.get(lineName) as VariantLine[];
                             return (
-                              <div key={brand}>
-                                <div className="text-[13px] font-bold uppercase tracking-wide text-[#2563EB]">{brand}</div>
-                                {lineNames.map(function (lineName) {
-                                  var arr = lineMap.get(lineName) as FlatItem[];
-                                  return (
-                                    <div key={lineName} className="mt-1">
-                                      <div className="text-[13px] font-semibold text-[#1F2937]">{lineName}</div>
-                                      <ul className="mt-0.5 space-y-1 pl-1">
-                                        {arr.map(function (it, idx) {
-                                          return (
-                                            <li key={idx} className="flex items-center justify-between gap-2 text-[13px]">
-                                              <span className="text-[#1F2937]">{it.label}</span>
-                                              <span className="font-bold text-[#16A34A]">
-                                                {it.price !== undefined ? money(it.price) + " Un." : "-"}
-                                              </span>
-                                            </li>
-                                          );
-                                        })}
-                                      </ul>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            );
-                          })
-                      : null}
-
-                    {flatBrandMap
-                      ? Array.from(flatBrandMap.keys())
-                          .sort()
-                          .map(function (brand) {
-                            var safeFlatBrandMap = flatBrandMap as Map<string, FlatItem[]>;
-                            var arr = safeFlatBrandMap.get(brand) as FlatItem[];
-                            return (
-                              <div key={brand}>
-                                <div className="text-[13px] font-bold uppercase tracking-wide text-[#2563EB]">{brand}</div>
-                                <ul className="mt-1 space-y-1 pl-1">
-                                  {arr.map(function (it, idx) {
+                              <div key={brand + "-" + lineName} className="border-b border-line/40 pb-1.5">
+                                <div className="text-[9px] font-bold uppercase tracking-wide text-[#2563EB]">{brand}</div>
+                                <div className="text-[10px] font-medium text-[#1F2937]">{lineName}</div>
+                                <ul className="mt-0.5">
+                                  {variants.map(function (v, idx) {
                                     return (
-                                      <li key={idx} className="flex items-center justify-between gap-2 text-[13px]">
-                                        <span className="text-[#1F2937]">{it.label}</span>
-                                        <span className="font-bold text-[#16A34A]">
-                                          {it.price !== undefined ? money(it.price) + " Un." : "-"}
+                                      <li key={idx} className="flex items-center justify-between text-[10px] text-[#6B7280]">
+                                        <span>{v.weight ? v.weight : "-"}</span>
+                                        <span className="font-bold text-good">
+                                          {v.price !== undefined ? money(v.price) : "-"}
                                         </span>
                                       </li>
                                     );
@@ -186,15 +147,41 @@ export function VendasReport() {
                                 </ul>
                               </div>
                             );
-                          })
-                      : null}
-                  </div>
+                          });
+                        })
+                    : null}
+
+                  {flatBrandMap
+                    ? Array.from(flatBrandMap.keys())
+                        .sort()
+                        .map(function (brand) {
+                          var safeFlatBrandMap = flatBrandMap as Map<string, VariantLine[]>;
+                          var arr = safeFlatBrandMap.get(brand) as VariantLine[];
+                          return (
+                            <div key={brand} className="border-b border-line/40 pb-1.5">
+                              <div className="text-[9px] font-bold uppercase tracking-wide text-[#2563EB]">{brand}</div>
+                              <ul className="mt-0.5">
+                                {arr.map(function (v, idx) {
+                                  return (
+                                    <li key={idx} className="flex items-center justify-between text-[10px] text-[#6B7280]">
+                                      <span>{v.weight ? v.weight : "-"}</span>
+                                      <span className="font-bold text-good">
+                                        {v.price !== undefined ? money(v.price) : "-"}
+                                      </span>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            </div>
+                          );
+                        })
+                    : null}
                 </div>
-              );
-            })}
-          </div>
-        )}
-      </main>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <SalesMessageModal
         open={messageOpen}
