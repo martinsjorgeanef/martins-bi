@@ -1,12 +1,17 @@
 export interface CleanedProduct {
   brand: string;
   tipo: string | null;
-  linha: string | null;
-  descriptor: string;
-  weight: string | null;
+  header: string;
+  itemLabel: string;
 }
 
 var TYPE_DICTIONARY: [string, string][] = [
+  ["CREME ASSADURA", "Creme para Assadura"],
+  ["COLONIA", "Colonia"],
+  ["LENCOS UMEDECIDOS", "Lencos Umedecidos"],
+  ["LENCO UME", "Lencos Umedecidos"],
+  ["TOALHAS UMEDECIDAS", "Toalhas Umedecidas"],
+  ["TOALHA UME", "Toalhas Umedecidas"],
   ["ENXAGUANTE BUCAL", "Enxaguante Bucal"],
   ["ENXAG.BUCAL", "Enxaguante Bucal"],
   ["ENX.B.", "Enxaguante Bucal"],
@@ -32,25 +37,41 @@ var TYPE_DICTIONARY: [string, string][] = [
   ["ABS.", "Absorvente"],
   ["FRALDA GERIATRICA", "Fralda Geriatrica"],
   ["FRALDA", "Fralda"],
-  ["FRD.", "Fralda"],
-  ["TOALHA UMEDECIDA", "Toalha Umedecida"],
-  ["TOALHA UME", "Toalha Umedecida"]
+  ["FRD.", "Fralda"]
 ];
 
-var LINE_DICTIONARY: [string, string][] = [
-  ["LUMINOUS WHITE", "Luminous White"],
-  ["TOTAL PREV ATIV", "Total"],
-  ["TOTAL PREVENCAO ATIVA", "Total"],
-  ["MAXIMA PROTECAO", "Maxima Protecao"],
-  ["MAX PROT", "Maxima Protecao"],
-  ["TRIPLA ACAO", "Tripla Acao"],
-  ["TRIPLA PROTECAO", "Tripla Protecao"],
-  ["SUPREME CARE", "Supreme Care"],
-  ["PERIOGARD", "Periogard"],
-  ["PLAX", "Plax"],
-  ["SENSITIVE", "Sensitive"],
-  ["NATURALS", "Naturals"]
+interface LineEntry {
+  words: string[];
+  label: string;
+  onlyCategoryContains?: string;
+}
+
+var LINE_DICTIONARY_RAW: { pattern: string; label: string; onlyCategoryContains?: string }[] = [
+  { pattern: "ROUPINHA PROTECAO ACOLCHOADA", label: "Roupinha Protecao Acolchoada" },
+  { pattern: "TRIPLA PROTECAO MEGA", label: "Tripla Protecao Mega" },
+  { pattern: "SUPREME CARE", label: "Supreme Care", onlyCategoryContains: "FRALD" },
+  { pattern: "NATURAL CARE", label: "Natural Care", onlyCategoryContains: "FRALD" },
+  { pattern: "ACTIVE MULHER", label: "Active Mulher" },
+  { pattern: "PROTECT PLUS", label: "Protect Plus" },
+  { pattern: "TRIPLA PROTECAO", label: "Tripla Protecao" },
+  { pattern: "LUMINOUS WHITE", label: "Luminous White" },
+  { pattern: "TOTAL PREV ATIV", label: "Total" },
+  { pattern: "TOTAL PREVENCAO ATIVA", label: "Total" },
+  { pattern: "MAXIMA PROTECAO", label: "Maxima Protecao" },
+  { pattern: "MAX PROT", label: "Maxima Protecao" },
+  { pattern: "TRIPLA ACAO", label: "Tripla Acao" },
+  { pattern: "PERIOGARD", label: "Periogard" },
+  { pattern: "PLAX", label: "Plax" },
+  { pattern: "SENSITIVE", label: "Sensitive" },
+  { pattern: "NATURALS", label: "Naturals" },
+  { pattern: "GEL", label: "Gel", onlyCategoryContains: "ABSORV" }
 ];
+
+var LINE_DICTIONARY: LineEntry[] = LINE_DICTIONARY_RAW.map(function (e) {
+  return { words: e.pattern.split(" "), label: e.label, onlyCategoryContains: e.onlyCategoryContains };
+}).sort(function (a, b) {
+  return b.words.length - a.words.length;
+});
 
 var WORD_FIXES: Record<string, string> = {
   PROTECAO: "Protecao",
@@ -62,17 +83,18 @@ var WORD_FIXES: Record<string, string> = {
   CARVAO: "Carvao",
   ORIG: "Original",
   PREVENCAO: "Prevencao",
-  GERIATRICA: "Geriatrica"
+  GERIATRICA: "Geriatrica",
+  DIARIA: "Diaria"
 };
 
-var NOISE_WORDS = ["GTS", "CX", "UN", "UND", "LV", "PG"];
+var FILLER_WORDS = ["HIPER", "LV", "PG", "GTS", "CX", "UN", "UND"];
+
+var SIZE_CODE_REGEX = /^[A-Z]{1,4}(\/[A-Z]{1,4})?$/;
+var UNIT_TOKEN_REGEX = /^(\d+[.,]?\d*)(G|GR|ML|KG|L)$/i;
+var NXN_TOKEN_REGEX = /^(\d+)X(\d+)$/i;
 
 function normalizeWord(text: string): string {
-  return text
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toUpperCase()
-    .trim();
+  return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
 }
 
 function normalizeSpaces(text: string): string {
@@ -90,112 +112,132 @@ function stripTypePrefix(text: string): { tipo: string | null; rest: string } {
   return { tipo: null, rest: text };
 }
 
-interface WeightMatch {
-  multiplier: string | null;
-  value: string;
-  unit: string;
-  raw: string;
+function normalizeAbasPhrases(text: string): string {
+  return text
+    .replace(/\bCOM\s+ABAS\b/gi, "c/Abas")
+    .replace(/\bSEM\s+ABAS\b/gi, "s/Abas")
+    .replace(/\bC\/ABAS\b/gi, "c/Abas")
+    .replace(/\bS\/ABAS\b/gi, "s/Abas");
 }
 
-function findWeights(text: string): { matches: WeightMatch[]; rest: string } {
-  var regex = /(?:(\d+)\s?X)?\s?(\d+[.,]?\d*)\s?(G|GR|ML|KG|L)\b/gi;
-  var matches: WeightMatch[] = [];
-  var rest = text;
-  var m;
-  while ((m = regex.exec(text)) !== null) {
-    var multiplier = m[1] ? m[1].toUpperCase().replace("X", "x") : "";
-    var value = m[2].replace(",", ".");
-    var unit = m[3].toLowerCase();
-    var unitFinal = unit === "gr" ? "g" : unit;
-    matches.push({ multiplier: multiplier, value: value, unit: unitFinal, raw: m[0] });
-    rest = rest.replace(m[0], " ");
-  }
-  return { matches: matches, rest: normalizeSpaces(rest) };
-}
-
-function buildWeightLabel(matches: WeightMatch[]): string | null {
-  if (matches.length === 0) return null;
-  if (matches.length === 1) return matches[0].value + matches[0].unit;
-  var parts = matches.map(function (m) {
-    if (m.multiplier) return m.multiplier + "x" + m.value + m.unit;
-    return m.value + m.unit;
+function removeWordsFromTokens(tokens: string[], wordsToRemove: string[]): string[] {
+  var normSet = wordsToRemove.map(normalizeWord);
+  return tokens.filter(function (t) {
+    return normSet.indexOf(normalizeWord(t)) === -1;
   });
-  return "Kit " + parts.join(" + ");
 }
 
-function stripNoiseWords(text: string): string {
-  var words = text.split(" ").filter(function (w) {
-    if (w.length === 0) return false;
-    var upper = w.toUpperCase().replace(/[.]/g, "");
-    if (NOISE_WORDS.indexOf(upper) !== -1) return false;
-    if (/^\d+$/.test(w)) return false;
-    return true;
-  });
-  return words.join(" ");
-}
+function matchLineDictionary(tokens: string[], category: string | null): { entry: LineEntry; index: number } | null {
+  var categoryNorm = category ? normalizeWord(category) : "";
+  var normTokens = tokens.map(normalizeWord);
 
-function fixWord(word: string): string {
-  var upper = normalizeWord(word);
-  if (WORD_FIXES[upper]) return WORD_FIXES[upper];
-  if (word.length === 0) return word;
-  return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-}
+  for (var e = 0; e < LINE_DICTIONARY.length; e++) {
+    var entry = LINE_DICTIONARY[e];
+    if (entry.onlyCategoryContains && categoryNorm.indexOf(entry.onlyCategoryContains) === -1) continue;
 
-function titleCaseWithFixes(text: string): string {
-  var cleaned = normalizeSpaces(text.replace(/[.]/g, " "));
-  if (cleaned.length === 0) return "";
-  return cleaned.split(" ").map(fixWord).join(" ");
-}
-
-function detectLine(text: string): { linha: string | null; rest: string } {
-  var upper = text.toUpperCase();
-  for (var i = 0; i < LINE_DICTIONARY.length; i++) {
-    var pattern = LINE_DICTIONARY[i][0];
-    var idx = upper.indexOf(pattern);
-    if (idx !== -1) {
-      var rest = text.slice(0, idx) + text.slice(idx + pattern.length);
-      return { linha: LINE_DICTIONARY[i][1], rest: normalizeSpaces(rest) };
+    var patternLen = entry.words.length;
+    for (var i = 0; i <= normTokens.length - patternLen; i++) {
+      var matches = true;
+      for (var j = 0; j < patternLen; j++) {
+        if (normTokens[i + j] !== entry.words[j]) {
+          matches = false;
+          break;
+        }
+      }
+      if (matches) return { entry: entry, index: i };
     }
   }
-  return { linha: null, rest: text };
+  return null;
 }
 
-function stripRedundantWords(words: string[], brand: string, categoryWords: string[]): string[] {
-  var brandNorm = normalizeWord(brand);
-  var categoryNorms = categoryWords.map(normalizeWord).filter(function (w) { return w.length >= 4; });
+function classifyToken(token: string): string {
+  var nxnMatch = token.match(NXN_TOKEN_REGEX);
+  if (nxnMatch) {
+    var first = nxnMatch[1];
+    var second = nxnMatch[2];
+    if (second === "1") return first + "un";
+    return first + "x" + second;
+  }
 
-  return words.filter(function (w) {
-    var norm = normalizeWord(w);
-    if (norm === brandNorm) return false;
-    if (categoryNorms.indexOf(norm) !== -1) return false;
-    return true;
-  });
+  var unitMatch = token.match(UNIT_TOKEN_REGEX);
+  if (unitMatch) {
+    var value = unitMatch[1].replace(",", ".");
+    var unit = unitMatch[2].toLowerCase();
+    return value + (unit === "gr" ? "g" : unit);
+  }
+
+  if (token.indexOf("/") !== -1 && SIZE_CODE_REGEX.test(token.toUpperCase())) {
+    return token.toUpperCase();
+  }
+
+  if (SIZE_CODE_REGEX.test(token.toUpperCase()) && token.length <= 4) {
+    return token.toUpperCase();
+  }
+
+  var norm = normalizeWord(token);
+  if (WORD_FIXES[norm]) return WORD_FIXES[norm];
+
+  if (token.length === 0) return token;
+  return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase();
+}
+
+function assembleTokens(tokens: string[]): string {
+  return tokens
+    .map(classifyToken)
+    .filter(function (t) { return t.length > 0; })
+    .join(" ");
 }
 
 export function cleanProductName(rawDescription: string, category?: string | null): CleanedProduct {
   var typeResult = stripTypePrefix(rawDescription);
-  var working = stripNoiseWords(typeResult.rest);
+  var working = normalizeAbasPhrases(typeResult.rest);
 
-  var weightResult = findWeights(working);
-  working = stripNoiseWords(weightResult.rest);
+  var tokens = working.split(" ").filter(function (t) { return t.length > 0; });
 
-  var words = working.split(" ").filter(function (w) { return w.length > 0; });
-  var brand = words.length > 0 ? fixWord(words[0]) : "Diversos";
-  var afterBrandWords = words.slice(1);
+  var brand = tokens.length > 0 ? classifyBrand(tokens[0]) : "Diversos";
+  var rest = tokens.slice(1);
 
-  var categoryWords = category ? category.split(" ") : [];
-  afterBrandWords = stripRedundantWords(afterBrandWords, brand, categoryWords);
+  var categoryWords = category ? category.split(" ").filter(function (w) { return normalizeWord(w).length >= 4; }) : [];
+  rest = removeWordsFromTokens(rest, categoryWords);
+  rest = removeWordsFromTokens(rest, FILLER_WORDS);
 
-  var afterBrand = afterBrandWords.join(" ");
-  var lineResult = detectLine(afterBrand);
+  var categoryNorm = category ? normalizeWord(category) : "";
+  var tipoNorm = typeResult.tipo ? normalizeWord(typeResult.tipo).split(" ") : [];
+  var tipoIsRedundant = typeResult.tipo !== null && tipoNorm.some(function (w) {
+    return w.length >= 4 && categoryNorm.indexOf(w) !== -1;
+  });
 
-  var descriptor = titleCaseWithFixes(lineResult.rest);
+  var lineMatch = matchLineDictionary(rest, category || null);
 
-  return {
-    brand: brand,
-    tipo: typeResult.tipo,
-    linha: lineResult.linha,
-    descriptor: descriptor,
-    weight: buildWeightLabel(weightResult.matches)
-  };
+  var header: string;
+  var itemTokens: string[];
+
+  if (lineMatch) {
+    header = lineMatch.entry.label;
+    itemTokens = rest.slice(0, lineMatch.index).concat(rest.slice(lineMatch.index + lineMatch.entry.words.length));
+  } else if (typeResult.tipo && !tipoIsRedundant) {
+    header = typeResult.tipo;
+    itemTokens = rest;
+  } else if (typeResult.tipo) {
+    header = typeResult.tipo;
+    itemTokens = rest;
+  } else if (rest.length > 0) {
+    header = assembleTokens(rest.slice(0, Math.min(3, rest.length)));
+    itemTokens = rest.slice(Math.min(3, rest.length));
+  } else {
+    header = brand;
+    itemTokens = [];
+  }
+
+  var itemLabel = assembleTokens(itemTokens);
+  if (itemLabel.trim().length === 0) {
+    itemLabel = header;
+  }
+
+  return { brand: brand, tipo: typeResult.tipo, header: header, itemLabel: itemLabel };
+}
+
+function classifyBrand(word: string): string {
+  if (word.length === 0) return "Diversos";
+  return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
 }
