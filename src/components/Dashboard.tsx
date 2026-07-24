@@ -255,7 +255,9 @@ export function Dashboard() {
       <main className={mainClass}>
         {emptyStateBlock}
 
-        <KpiCards stats={stats} loading={statsLoading} />
+       <KpiCards stats={stats} loading={statsLoading} />
+
+        {!execMode ? <CadgerInfoCard /> : null}
 
         {!execMode && stats ? (
           <RecoveryPotentialCard
