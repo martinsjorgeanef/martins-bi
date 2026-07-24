@@ -48,9 +48,11 @@ model UploadLog {
 }
 
 model Settings {
-  id             String @id @default("singleton")
-  thresholdPct   Float  @default(5)
+  id                String @id @default("singleton")
+  thresholdPct      Float  @default(5)
+  activeCompetitors String @default("")
 }
+
 model CadgerItem {
   id          String   @id @default(cuid())
   ean         String   @unique
@@ -61,6 +63,7 @@ model CadgerItem {
 
   @@index([fornecedor])
 }
+
 model CompetitorCatalogItem {
   id             String   @id @default(cuid())
   ean            String
