@@ -28,7 +28,7 @@ export function ClearDataModal({ open, onClose, onCleared }: Props) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/40 p-4">
       <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl">
         <div className="flex items-center justify-between">
-          <h2 className="text-[16px] font-semibold text-[#1F2937]">Limpar todos os dados?</h2>
+          <h2 className="text-[16px] font-semibold text-[#1F2937]">Limpar dados da analise?</h2>
           <button onClick={onClose} className="rounded-lg p-1 text-ink-500 hover:bg-surface">
             <X size={18} />
           </button>
@@ -37,8 +37,9 @@ export function ClearDataModal({ open, onClose, onCleared }: Props) {
         <div className="mt-3 flex items-start gap-2 rounded-lg bg-bad-bg p-3">
           <AlertTriangle size={16} className="mt-0.5 shrink-0 text-bad" />
           <p className="text-[13px] leading-relaxed text-bad">
-            Isso apaga completamente os produtos, concorrentes, CADGER, historico de envios e indicadores. Essa
-            acao nao pode ser desfeita. Voce precisara enviar as planilhas novamente do zero.
+            Isso apaga produtos Martins, concorrentes, comparacoes, indicadores e mensagens geradas. O CADGER
+            (base de fornecedores) e mantido, ja que ele e atualizado separadamente. Essa acao nao pode ser
+            desfeita.
           </p>
         </div>
 
@@ -56,7 +57,7 @@ export function ClearDataModal({ open, onClose, onCleared }: Props) {
             className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-bad py-2 text-[13px] font-semibold text-white hover:opacity-90 disabled:opacity-60"
           >
             <Trash2 size={14} />
-            {loading ? "Limpando..." : "Sim, limpar tudo"}
+            {loading ? "Limpando..." : "Sim, limpar"}
           </button>
         </div>
       </div>
