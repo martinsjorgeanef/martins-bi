@@ -20,7 +20,7 @@ export function StatusBadge({ status }: { status: CompetitivenessStatus | "SEM_D
   return (
     <span
       className={clsx(
-        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium whitespace-nowrap",
+        "inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-medium whitespace-nowrap",
         STYLES[status]
       )}
     >
