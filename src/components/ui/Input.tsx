@@ -15,7 +15,7 @@ export function Input({ icon, className, ...rest }: Props) {
         <input
           {...rest}
           className={clsx(
-            "h-10 w-full rounded-lg border border-line bg-surface pl-8 pr-3 text-[13px] text-ink-800 outline-none focus:border-accent",
+            "h-[38px] w-full rounded-lg border border-line bg-surface pl-8 pr-3 text-[13px] text-ink-800 outline-none focus:border-accent",
             className
           )}
         />
@@ -26,7 +26,7 @@ export function Input({ icon, className, ...rest }: Props) {
     <input
       {...rest}
       className={clsx(
-        "h-10 rounded-lg border border-line bg-surface px-3 text-[13px] text-ink-800 outline-none focus:border-accent",
+        "h-[38px] rounded-lg border border-line bg-surface px-3 text-[13px] text-ink-800 outline-none focus:border-accent",
         className
       )}
     />
