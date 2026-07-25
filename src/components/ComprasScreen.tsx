@@ -62,11 +62,11 @@ export function ComprasScreen() {
           <p className="mt-0.5 text-[13px] text-[#6B7280]">Posicionamento, prioridades e sugestoes de negociacao</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={function () { exportComprasExcel(industriaAtiva, categories); }}>
+          <Button variant="outline" onClick={function () { void exportComprasExcel(industriaAtiva, categories); }}>
             <FileSpreadsheet size={14} />
             Exportar Excel
           </Button>
-          <Button variant="outline" onClick={function () { exportComprasPdf(industriaAtiva, categories); }}>
+          <Button variant="outline" onClick={function () { void exportComprasPdf(industriaAtiva, categories); }}>
             <FileText size={14} />
             Exportar PDF
           </Button>
