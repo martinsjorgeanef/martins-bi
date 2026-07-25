@@ -32,7 +32,7 @@ export function Button({ children, onClick, variant, disabled, type, title, clas
       disabled={disabled}
       title={title}
       className={clsx(
-        "flex h-10 items-center justify-center gap-1.5 rounded-lg px-3.5 text-[13px] font-medium transition disabled:opacity-50",
+        "flex h-[38px] items-center justify-center gap-1.5 rounded-lg px-3.5 text-[13px] font-medium transition disabled:opacity-50",
         VARIANT_CLASSES[v],
         className
       )}
