@@ -23,10 +23,12 @@ async function fetchProductRows(): Promise<ProductRow[]> {
   return data.rows || [];
 }
 
+type SheetCell = string | number;
+
 export async function exportComprasExcel(industry: IndustryRow | undefined, categories: CategoryRow[]) {
   var wb = XLSX.utils.book_new();
 
-  var resumoRows: (string | number)[][] = [
+  var resumoRows: SheetCell[][] = [
     ["Fornecedor", industry ? industry.fornecedor : "-"],
     ["Itens Martins", industry ? industry.itensMartins : 0],
     ["Itens Concorrente Cadastrados", industry ? industry.itensConcorrenteCadastrados : 0],
@@ -39,7 +41,7 @@ export async function exportComprasExcel(industry: IndustryRow | undefined, cate
   resumoSheet["!cols"] = [{ wch: 28 }, { wch: 30 }];
   XLSX.utils.book_append_sheet(wb, resumoSheet, "Resumo Industria");
 
-  var catHeader: (string | number)[] = [
+  var catHeader: SheetCell[] = [
     "Categoria",
     "Monitorados",
     "Competitivos",
@@ -48,7 +50,7 @@ export async function exportComprasExcel(industry: IndustryRow | undefined, cate
     "Gap Medio (%)",
     "Prioridade"
   ];
-  var catRows: (string | number)[][] = categories.map(function (c) {
+  var catBodyRows: SheetCell[][] = categories.map(function (c) {
     return [
       c.category,
       c.monitored,
@@ -59,19 +61,31 @@ export async function exportComprasExcel(industry: IndustryRow | undefined, cate
       c.priority
     ];
   });
-  var catSheet = XLSX.utils.aoa_to_sheet([catHeader].concat(catRows));
+  var catAllRows: SheetCell[][] = [catHeader];
+  catBodyRows.forEach(function (row) { catAllRows.push(row); });
+  var catSheet = XLSX.utils.aoa_to_sheet(catAllRows);
   catSheet["!cols"] = [{ wch: 30 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 18 }, { wch: 14 }, { wch: 18 }];
   XLSX.utils.book_append_sheet(wb, catSheet, "Categorias");
 
   var acoes = buildComprasActionRecommendations(categories);
-  var acoesRows: string[][] = [["Acoes Recomendadas"]].concat(acoes.map(function (a) { return [a]; }));
+  var acoesRows: SheetCell[][] = [["Acoes Recomendadas"]];
+  acoes.forEach(function (a) { acoesRows.push([a]); });
   var acoesSheet = XLSX.utils.aoa_to_sheet(acoesRows);
   acoesSheet["!cols"] = [{ wch: 80 }];
   XLSX.utils.book_append_sheet(wb, acoesSheet, "Acoes Recomendadas");
 
   var products = await fetchProductRows();
-  var prodHeader: (string | number)[] = ["EAN", "Descricao", "Categoria", "Preco Martins", "Preco Concorrente", "Distribuidor", "Diferenca (%)", "Status"];
-  var prodRows: (string | number)[][] = products.map(function (p) {
+  var prodHeader: SheetCell[] = [
+    "EAN",
+    "Descricao",
+    "Categoria",
+    "Preco Martins",
+    "Preco Concorrente",
+    "Distribuidor",
+    "Diferenca (%)",
+    "Status"
+  ];
+  var prodBodyRows: SheetCell[][] = products.map(function (p) {
     return [
       p.ean,
       p.description,
@@ -83,7 +97,9 @@ export async function exportComprasExcel(industry: IndustryRow | undefined, cate
       STATUS_LABEL[p.status]
     ];
   });
-  var prodSheet = XLSX.utils.aoa_to_sheet([prodHeader].concat(prodRows));
+  var prodAllRows: SheetCell[][] = [prodHeader];
+  prodBodyRows.forEach(function (row) { prodAllRows.push(row); });
+  var prodSheet = XLSX.utils.aoa_to_sheet(prodAllRows);
   prodSheet["!cols"] = [
     { wch: 16 },
     { wch: 45 },
