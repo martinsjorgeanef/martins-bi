@@ -5,7 +5,7 @@ import { buildComprasActionRecommendations } from "./comprasEmailBuilder";
 export function exportComprasExcel(industry: IndustryRow | undefined, categories: CategoryRow[]) {
   var wb = XLSX.utils.book_new();
 
-  var resumoRows = [
+  var resumoRows: (string | number)[][] = [
     ["Fornecedor", industry ? industry.fornecedor : "-"],
     ["Itens Martins", industry ? industry.itensMartins : 0],
     ["Itens Concorrente Cadastrados", industry ? industry.itensConcorrenteCadastrados : 0],
@@ -18,8 +18,16 @@ export function exportComprasExcel(industry: IndustryRow | undefined, categories
   resumoSheet["!cols"] = [{ wch: 28 }, { wch: 30 }];
   XLSX.utils.book_append_sheet(wb, resumoSheet, "Resumo Industria");
 
-  var catHeader = ["Categoria", "Monitorados", "Competitivos", "Em Desvantagem", "Competitividade (%)", "Gap Medio (%)", "Prioridade"];
-  var catRows = categories.map(function (c) {
+  var catHeader: (string | number)[] = [
+    "Categoria",
+    "Monitorados",
+    "Competitivos",
+    "Em Desvantagem",
+    "Competitividade (%)",
+    "Gap Medio (%)",
+    "Prioridade"
+  ];
+  var catRows: (string | number)[][] = categories.map(function (c) {
     return [
       c.category,
       c.monitored,
@@ -35,7 +43,8 @@ export function exportComprasExcel(industry: IndustryRow | undefined, categories
   XLSX.utils.book_append_sheet(wb, catSheet, "Categorias");
 
   var acoes = buildComprasActionRecommendations(categories);
-  var acoesSheet = XLSX.utils.aoa_to_sheet([["Acoes Recomendadas"]].concat(acoes.map(function (a) { return [a]; })));
+  var acoesRows: string[][] = [["Acoes Recomendadas"]].concat(acoes.map(function (a) { return [a]; }));
+  var acoesSheet = XLSX.utils.aoa_to_sheet(acoesRows);
   acoesSheet["!cols"] = [{ wch: 80 }];
   XLSX.utils.book_append_sheet(wb, acoesSheet, "Acoes Recomendadas");
 
