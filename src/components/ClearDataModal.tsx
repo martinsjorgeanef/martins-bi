@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { X, Trash2, AlertTriangle } from "lucide-react";
+import { AlertTriangle, Trash2 } from "lucide-react";
+import { Modal } from "./ui/Modal";
+import { Button } from "./ui/Button";
 
 interface Props {
   open: boolean;
@@ -11,8 +13,6 @@ interface Props {
 
 export function ClearDataModal({ open, onClose, onCleared }: Props) {
   const [loading, setLoading] = useState(false);
-
-  if (!open) return null;
 
   async function handleConfirm() {
     setLoading(true);
@@ -25,42 +25,24 @@ export function ClearDataModal({ open, onClose, onCleared }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/40 p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl">
-        <div className="flex items-center justify-between">
-          <h2 className="text-[16px] font-semibold text-[#1F2937]">Limpar dados da analise?</h2>
-          <button onClick={onClose} className="rounded-lg p-1 text-ink-500 hover:bg-surface">
-            <X size={18} />
-          </button>
-        </div>
-
-        <div className="mt-3 flex items-start gap-2 rounded-lg bg-bad-bg p-3">
-          <AlertTriangle size={16} className="mt-0.5 shrink-0 text-bad" />
-          <p className="text-[13px] leading-relaxed text-bad">
-            Isso apaga produtos Martins, concorrentes, comparacoes, indicadores e mensagens geradas. O CADGER
-            (base de fornecedores) e mantido, ja que ele e atualizado separadamente. Essa acao nao pode ser
-            desfeita.
-          </p>
-        </div>
-
-        <div className="mt-4 flex gap-2">
-          <button
-            onClick={onClose}
-            disabled={loading}
-            className="flex-1 rounded-lg border border-line py-2 text-[13px] font-medium text-ink-700 hover:bg-surface"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleConfirm}
-            disabled={loading}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-bad py-2 text-[13px] font-semibold text-white hover:opacity-90 disabled:opacity-60"
-          >
-            <Trash2 size={14} />
-            {loading ? "Limpando..." : "Sim, limpar"}
-          </button>
-        </div>
+    <Modal open={open} onClose={onClose} title="Limpar dados da analise?">
+      <div className="flex items-start gap-2 rounded-lg bg-bad-bg p-3">
+        <AlertTriangle size={16} className="mt-0.5 shrink-0 text-bad" />
+        <p className="text-[13px] leading-relaxed text-bad">
+          Isso apaga produtos Martins, concorrentes, comparacoes, indicadores e mensagens geradas. O CADGER (base de
+          fornecedores) e mantido, ja que ele e atualizado separadamente. Essa acao nao pode ser desfeita.
+        </p>
       </div>
-    </div>
+
+      <div className="mt-4 flex gap-2">
+        <Button variant="outline" onClick={onClose} disabled={loading} className="flex-1">
+          Cancelar
+        </Button>
+        <Button variant="danger" onClick={handleConfirm} disabled={loading} className="flex-1 border-transparent bg-bad text-white hover:bg-bad/90">
+          <Trash2 size={14} />
+          {loading ? "Limpando..." : "Sim, limpar"}
+        </Button>
+      </div>
+    </Modal>
   );
 }
