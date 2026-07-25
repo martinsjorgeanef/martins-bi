@@ -38,7 +38,7 @@ export interface IndustryRow {
   ruptura: number;
   competitivePct: number;
   disadvantage: number;
-  priority: "Alta" | "Média" | "Baixa";
+  priority: "Prioridade Maxima" | "Alta" | "Media" | "Baixa";
   summary: string;
   categoriesAffected: string[];
 }
@@ -50,7 +50,7 @@ export interface CategoryRow {
   attention: number;
   disadvantage: number;
   competitivePct: number;
-  priority: "Alta" | "Média" | "Baixa";
+  priority: "Prioridade Maxima" | "Alta" | "Media" | "Baixa";
   summary: string;
   avgDisadvantagePct: number | null;
 }
