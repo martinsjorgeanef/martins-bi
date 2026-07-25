@@ -80,7 +80,7 @@ export function Filters(props: Props) {
         <option value="SEM_DADOS">Sem dados</option>
       </Select>
 
-      <div className="flex h-10 shrink-0 items-center gap-1.5 rounded-lg border border-line bg-surface px-3">
+      <div className="flex h-[38px] shrink-0 items-center gap-1.5 rounded-lg border border-line bg-surface px-3">
         <SlidersHorizontal size={13} className="text-ink-500" />
         <span className="whitespace-nowrap text-[13px] text-ink-500">Limite Negociacao</span>
         <input
