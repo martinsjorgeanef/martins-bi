@@ -11,14 +11,15 @@ export function calcStatus(diffPct: number, thresholdPct: number): Competitivene
   return "COMPETITIVO";
 }
 
-export function priorityForCompetitivePct(pct: number): "Alta" | "Média" | "Baixa" {
+export type PriorityLevel = "Prioridade Maxima" | "Alta" | "Media" | "Baixa";
+
+export function priorityForCompetitivePct(pct: number): PriorityLevel {
+  if (pct < 50) return "Prioridade Maxima";
   if (pct < 70) return "Alta";
-  if (pct < 85) return "Média";
+  if (pct < 85) return "Media";
   return "Baixa";
 }
 
-// Calcula o desconto (fracao do preco Martins) necessario para o item deixar de estar
-// em desvantagem e passar a "Competitivo" (ou seja, atingir o limite de negociacao atual).
 export function calcRequiredDiscountPct(martinsPrice: number, marketPrice: number, thresholdFraction: number): number {
   if (martinsPrice <= 0) return 0;
   var requiredNewPrice = marketPrice * (1 - thresholdFraction);
@@ -35,7 +36,7 @@ export function discountTier(discountFraction: number): "green" | "yellow" | "re
 
 export const STATUS_LABEL: Record<CompetitivenessStatus | "SEM_DADOS", string> = {
   COMPETITIVO: "Competitivo",
-  ATENCAO: "Negociação pontual",
+  ATENCAO: "Negociacao pontual",
   DESVANTAGEM: "Desvantagem",
   SEM_DADOS: "Sem dados de mercado"
 };
