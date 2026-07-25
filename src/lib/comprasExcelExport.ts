@@ -70,7 +70,7 @@ export async function exportComprasExcel(industry: IndustryRow | undefined, cate
   XLSX.utils.book_append_sheet(wb, acoesSheet, "Acoes Recomendadas");
 
   var products = await fetchProductRows();
-  var prodHeader: string[] = ["EAN", "Descricao", "Categoria", "Preco Martins", "Preco Concorrente", "Distribuidor", "Diferenca (%)", "Status"];
+  var prodHeader: (string | number)[] = ["EAN", "Descricao", "Categoria", "Preco Martins", "Preco Concorrente", "Distribuidor", "Diferenca (%)", "Status"];
   var prodRows: (string | number)[][] = products.map(function (p) {
     return [
       p.ean,
