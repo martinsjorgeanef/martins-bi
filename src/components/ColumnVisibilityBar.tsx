@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
 import { Eye, EyeOff, Save } from "lucide-react";
 import { ColumnVisibility } from "./ProductsTable";
+import { Chip } from "./ui/Chip";
+import { Button } from "./ui/Button";
 
 interface Props {
   visibleColumns: ColumnVisibility;
@@ -61,48 +62,33 @@ export function ColumnVisibilityBar({ visibleColumns, onChange }: Props) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-line bg-white p-2 shadow-card">
+    <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-line bg-white p-2.5 shadow-card">
       {CHIP_ORDER.map(function (c) {
-        var active = visibleColumns[c.key];
         return (
-          <button
-            key={c.key}
-            onClick={function () { toggle(c.key); }}
-            className={
-              "h-9 rounded-full border px-3 text-[13px] font-medium transition " +
-              (active
-                ? "border-accent bg-accent text-white"
-                : "border-line bg-white text-ink-600 hover:bg-surface")
-            }
-          >
+          <Chip key={c.key} active={visibleColumns[c.key]} onClick={function () { toggle(c.key); }}>
             {c.label}
-          </button>
+          </Chip>
         );
       })}
 
       <div className="mx-1 h-6 w-px bg-line" />
 
-      <button
-        onClick={showAll}
-        className="flex h-9 items-center gap-1 rounded-full border border-line bg-white px-3 text-[13px] font-medium text-ink-600 hover:bg-surface"
-      >
+      <Button variant="outline" onClick={showAll} className="rounded-full">
         <Eye size={13} />
         Mostrar tudo
-      </button>
-      <button
-        onClick={hideAll}
-        className="flex h-9 items-center gap-1 rounded-full border border-line bg-white px-3 text-[13px] font-medium text-ink-600 hover:bg-surface"
-      >
+      </Button>
+      <Button variant="outline" onClick={hideAll} className="rounded-full">
         <EyeOff size={13} />
         Ocultar tudo
-      </button>
-      <button
+      </Button>
+      <Button
+        variant="ghost"
         onClick={saveView}
-        className="flex h-9 items-center gap-1 rounded-full border border-accent/30 bg-accent/10 px-3 text-[13px] font-semibold text-accent-dark hover:bg-accent/20"
+        className="rounded-full border border-accent/30 bg-accent/10 text-accent-dark hover:bg-accent/20"
       >
         <Save size={13} />
         Salvar visualizacao
-      </button>
+      </Button>
     </div>
   );
 }
