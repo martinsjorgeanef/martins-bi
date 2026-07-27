@@ -90,7 +90,7 @@ function SortHeader({
       )}
     >
       <span
-        style={{ color: HEADER_TEXT, fontSize: "13px", fontWeight: 600 }}
+        style={{ color: HEADER_TEXT, fontSize: "11.5px", fontWeight: 600 }}
         className={clsx(
           "inline-flex items-center gap-1 uppercase tracking-wide",
           align === "right" && "flex-row-reverse",
@@ -105,7 +105,7 @@ function SortHeader({
 }
 
 var FIXED_WIDTHS: Record<string, number> = {
-  ean: 8,
+  ean: 11,
   precoMartins: 12,
   precoConcorrente: 13,
   diferenca: 9,
@@ -151,17 +151,17 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
                 <SortHeader label="Descricao" field="description" sortBy={sortBy} sortDir={sortDir} onSort={onSort} />
               ) : null}
               {visibleColumns.categoria ? (
-                <th className="whitespace-nowrap px-2.5 py-1.5 text-left" style={{ color: HEADER_TEXT, fontSize: "13px", fontWeight: 600 }}>
+                <th className="whitespace-nowrap px-2.5 py-1.5 text-left" style={{ color: HEADER_TEXT, fontSize: "11.5px", fontWeight: 600 }}>
                   Categoria
                 </th>
               ) : null}
               {visibleColumns.fornecedor ? (
-                <th className="whitespace-nowrap px-2.5 py-1.5 text-left" style={{ color: HEADER_TEXT, fontSize: "13px", fontWeight: 600 }}>
+                <th className="whitespace-nowrap px-2.5 py-1.5 text-left" style={{ color: HEADER_TEXT, fontSize: "11.5px", fontWeight: 600 }}>
                   Fornecedor
                 </th>
               ) : null}
               {visibleColumns.distribuidor ? (
-                <th className="whitespace-nowrap px-2.5 py-1.5 text-left" style={{ color: HEADER_TEXT, fontSize: "13px", fontWeight: 600 }}>
+                <th className="whitespace-nowrap px-2.5 py-1.5 text-left" style={{ color: HEADER_TEXT, fontSize: "11.5px", fontWeight: 600 }}>
                   Distribuidor
                 </th>
               ) : null}
@@ -175,16 +175,16 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
                 <SortHeader label="Diferenca" field="diffPct" sortBy={sortBy} sortDir={sortDir} onSort={onSort} align="right" />
               ) : null}
               {visibleColumns.status ? (
-                <th className="whitespace-nowrap px-2.5 py-1.5 text-center" style={{ color: HEADER_TEXT, fontSize: "13px", fontWeight: 600 }}>
+                <th className="whitespace-nowrap px-2.5 py-1.5 text-center" style={{ color: HEADER_TEXT, fontSize: "11.5px", fontWeight: 600 }}>
                   Status
                 </th>
               ) : null}
               {visibleColumns.marca ? (
-                <th className="whitespace-nowrap px-2.5 py-1.5 text-left" style={{ color: HEADER_TEXT, fontSize: "13px", fontWeight: 600 }}>
+                <th className="whitespace-nowrap px-2.5 py-1.5 text-left" style={{ color: HEADER_TEXT, fontSize: "11.5px", fontWeight: 600 }}>
                   Marca
                 </th>
               ) : null}
-              <th className="whitespace-nowrap px-2.5 py-1.5 text-center" style={{ color: HEADER_TEXT, fontSize: "13px", fontWeight: 600 }}>
+              <th className="whitespace-nowrap px-2.5 py-1.5 text-center" style={{ color: HEADER_TEXT, fontSize: "11.5px", fontWeight: 600 }}>
                 Simulacao
               </th>
             </tr>
@@ -217,7 +217,7 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
                   return (
                     <tr key={r.id} className="border-b border-line/50 hover:bg-[#EEF4FF]" style={{ background: rowBg }}>
                       {visibleColumns.ean ? (
-                        <td className="truncate px-2.5 py-1.5 font-mono text-[11px] text-ink-700" title={r.ean}>
+                        <td className="whitespace-nowrap px-2.5 py-1.5 font-mono text-[11px] text-ink-700" title={r.ean}>
                           {r.ean}
                         </td>
                       ) : null}
