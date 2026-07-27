@@ -28,3 +28,12 @@ html {
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+/* Reducao geral de tamanho de fonte em todo o app, para telas menores e visual mais denso */
+[class*="text-[32px]"] { font-size: 22px !important; }
+[class*="text-[22px]"] { font-size: 16px !important; }
+[class*="text-[15px]"] { font-size: 13px !important; }
+[class*="text-[14px]"] { font-size: 12.5px !important; }
+[class*="text-[13px]"] { font-size: 12px !important; }
+[class*="text-[12px]"] { font-size: 11px !important; }
+[class*="text-[11px]"] { font-size: 10px !important; }
