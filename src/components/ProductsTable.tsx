@@ -222,7 +222,7 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
                         </td>
                       ) : null}
                       {visibleColumns.descricao ? (
-                        <td className="truncate px-2.5 py-1.5 text-[13px] text-ink-950" title={r.description}>
+                        <td className="whitespace-normal break-words px-2.5 py-1.5 text-[12px] text-ink-950" title={r.description}>
                           {r.description}
                         </td>
                       ) : null}
