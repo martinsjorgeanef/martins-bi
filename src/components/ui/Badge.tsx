@@ -1,6 +1,6 @@
 import { clsx } from "clsx";
 
-export type BadgeTone = "good" | "warn" | "bad" | "neutral" | "accent";
+export type BadgeTone = "good" | "warn" | "bad" | "neutral" | "accent" | "gold";
 
 interface Props {
   children: React.ReactNode;
@@ -12,7 +12,8 @@ var TONE_CLASSES: Record<BadgeTone, string> = {
   warn: "bg-warn-bg text-warn border-warn/20",
   bad: "bg-bad-bg text-bad border-bad/20",
   neutral: "bg-ink-800/5 text-ink-600 border-ink-600/10",
-  accent: "bg-accent/10 text-accent-dark border-accent/20"
+  accent: "bg-accent/10 text-accent-dark border-accent/20",
+  gold: "bg-[#FBEBA1] text-[#946200] border-[#E8C547]/40"
 };
 
 export function Badge({ children, tone }: Props) {

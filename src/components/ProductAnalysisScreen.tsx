@@ -6,6 +6,7 @@ import { ProductsTable, ColumnVisibility, DEFAULT_COLUMN_VISIBILITY } from "./Pr
 import { ColumnVisibilityBar, loadSavedColumnVisibility } from "./ColumnVisibilityBar";
 import { ExportButtons } from "./ExportButtons";
 import { ProductRow } from "@/lib/types";
+import { Callout } from "./ui/Callout";
 
 export function ProductAnalysisScreen() {
   const [activeCompetitors, setActiveCompetitors] = useState<string[]>([]);
@@ -139,6 +140,13 @@ export function ProductAnalysisScreen() {
   return (
     <div className="mx-auto flex max-w-[1800px] w-[95%] flex-col gap-2.5 py-4">
       <h1 className="text-[15px] font-bold text-[#1F2937]">Analise de Produtos</h1>
+      <Callout
+        tone="gold"
+        title={"Limite de competitividade: " + threshold + "%"}
+        subtitle="Produtos com diferenca de preco acima desse limite sao sinalizados como desvantagem competitiva."
+        value={total.toLocaleString("pt-BR")}
+        valueLabel="produtos no filtro atual"
+      />
 
       <div className="flex items-center justify-between">
         <ExportButtons fetchAllRows={fetchAllFilteredRows} />
