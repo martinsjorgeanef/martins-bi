@@ -106,10 +106,10 @@ function SortHeader({
 
 var FIXED_WIDTHS: Record<string, number> = {
   ean: 8,
-  precoMartins: 9,
-  precoConcorrente: 9,
-  diferenca: 7,
-  status: 8
+  precoMartins: 12,
+  precoConcorrente: 13,
+  diferenca: 9,
+  status: 9
 };
 var SIMULACAO_WIDTH = 8;
 var FLEXIBLE_KEYS: (keyof ColumnVisibility)[] = ["descricao", "categoria", "fornecedor", "distribuidor", "marca"];
