@@ -34,10 +34,11 @@ function formatMoney(v: number) {
 }
 
 interface Props {
-  fornecedor: string;
+  fornecedores: string[];
 }
 
-export function SupplierHistoryPanel({ fornecedor }: Props) {
+export function SupplierHistoryPanel({ fornecedores }: Props) {
+  const [fornecedor, setFornecedor] = useState<string>(fornecedores.length > 0 ? fornecedores[0] : "");
   const [estado, setEstado] = useState<string>("RJ");
   const [rows, setRows] = useState<SupplierHistoryRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -101,6 +102,12 @@ export function SupplierHistoryPanel({ fornecedor }: Props) {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Select value={fornecedor} onChange={function (e) { setFornecedor(e.target.value); }} className="w-56">
+            {fornecedores.length === 0 ? <option value="">Nenhum fornecedor</option> : null}
+            {fornecedores.map(function (f) {
+              return <option key={f} value={f}>{f}</option>;
+            })}
+          </Select>
           <Select value={estado} onChange={function (e) { setEstado(e.target.value); }} className="w-24">
             {ESTADOS.map(function (uf) {
               return <option key={uf} value={uf}>{uf}</option>;

@@ -93,7 +93,7 @@ export function ComprasScreen() {
         </div>
       </div>
 
-      <SupplierHistoryPanel fornecedor={industriaAtiva ? industriaAtiva.fornecedor : ""} />
+      <SupplierHistoryPanel fornecedores={industries.map(function (i) { return i.fornecedor; })} />
 
       <EmailComprasModal
         open={emailOpen}
