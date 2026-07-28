@@ -7,15 +7,70 @@ export interface StatsForEmail {
   disadvantage: number;
 }
 
+export interface SupplierHistoryRowForEmail {
+  mes: string;
+  metaVenda: number;
+  venda: number;
+  clientesAtendidos: number;
+}
+
 function formatPct(n: number): string {
   return n.toFixed(1).replace(".", ",") + "%";
+}
+
+function formatMoneyBR(v: number): string {
+  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+export function buildHistoryParagraph(rows: SupplierHistoryRowForEmail[], estadoLabel: string): string | null {
+  if (rows.length === 0) return null;
+
+  var sorted = rows.slice().sort(function (a, b) { return a.mes.localeCompare(b.mes); });
+  var comMeta = sorted.filter(function (r) { return r.metaVenda > 0; });
+  if (comMeta.length === 0) return null;
+
+  var somaPct = 0;
+  var mesesAbaixo = 0;
+  var somaClientes = 0;
+  for (var i = 0; i < comMeta.length; i++) {
+    var pct = (comMeta[i].venda / comMeta[i].metaVenda) * 100;
+    somaPct += pct;
+    if (pct < 100) mesesAbaixo++;
+    somaClientes += comMeta[i].clientesAtendidos;
+  }
+  var avgPct = somaPct / comMeta.length;
+  var avgClientes = Math.round(somaClientes / comMeta.length);
+  var n = comMeta.length;
+
+  var somaMeta = comMeta.reduce(function (acc, r) { return acc + r.metaVenda; }, 0);
+  var somaVenda = comMeta.reduce(function (acc, r) { return acc + r.venda; }, 0);
+
+  var frase: string;
+  if (avgPct >= 100) {
+    frase =
+      "Nos ultimos " + n + " meses no estado do " + estadoLabel + ", a industria atingiu em media " +
+      formatPct(avgPct) + " da meta (meta acumulada de " + formatMoneyBR(somaMeta) + " frente a " +
+      formatMoneyBR(somaVenda) + " realizados), atendendo em media " + avgClientes +
+      " clientes por mes. Ainda assim, em " + mesesAbaixo + " desses " + n +
+      " meses o resultado ficou abaixo da meta, o que sugere espaco para crescer ainda mais o potencial da industria na regiao.";
+  } else {
+    frase =
+      "Nos ultimos " + n + " meses no estado do " + estadoLabel + ", a industria atingiu em media apenas " +
+      formatPct(avgPct) + " da meta estabelecida (meta acumulada de " + formatMoneyBR(somaMeta) +
+      " frente a " + formatMoneyBR(somaVenda) + " realizados), atendendo em media " + avgClientes +
+      " clientes por mes. Em " + mesesAbaixo + " desses " + n +
+      " meses o resultado ficou abaixo da meta, reforcando a necessidade de acoes conjuntas para destravar o potencial da industria na regiao.";
+  }
+
+  return frase;
 }
 
 export function buildComprasEmail(
   categories: CategoryRow[],
   industry: IndustryRow | undefined,
   buyerName: string,
-  state: string
+  state: string,
+  historyParagraph?: string | null
 ) {
   const industryName = industry ? industry.fornecedor : "[Nome da Indústria]";
   const buyer = buyerName.trim() || "[Nome do Comprador]";
@@ -38,6 +93,11 @@ export function buildComprasEmail(
       "."
   );
   lines.push("");
+
+  if (historyParagraph) {
+    lines.push(historyParagraph);
+    lines.push("");
+  }
 
   if (opportunityCategories.length > 0) {
     lines.push("Nesta atualização, identificamos oportunidades de melhoria concentradas principalmente nas seguintes categorias:");
