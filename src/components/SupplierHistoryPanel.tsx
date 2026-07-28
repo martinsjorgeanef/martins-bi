@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Select } from "./ui/Select";
 import { Button } from "./ui/Button";
 import { Badge } from "./ui/Badge";
@@ -38,6 +38,7 @@ interface Props {
 }
 
 export function SupplierHistoryPanel({ fornecedores }: Props) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [fornecedor, setFornecedor] = useState<string>(fornecedores.length > 0 ? fornecedores[0] : "");
   const [estado, setEstado] = useState<string>("RJ");
   const [rows, setRows] = useState<SupplierHistoryRow[]>([]);
@@ -113,20 +114,20 @@ export function SupplierHistoryPanel({ fornecedores }: Props) {
               return <option key={uf} value={uf}>{uf}</option>;
             })}
           </Select>
-          <label>
-            <input
-              type="file"
-              accept=".xlsx,.xls"
-              className="hidden"
-              onChange={handleFileChange}
-              disabled={uploading || !fornecedor}
-            />
-            <span>
-              <Button variant="secondary" disabled={uploading || !fornecedor}>
-                {uploading ? "Enviando..." : "Importar planilha"}
-              </Button>
-            </span>
-          </label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          <Button
+            variant="secondary"
+            disabled={uploading || !fornecedor}
+            onClick={function () { fileInputRef.current?.click(); }}
+          >
+            {uploading ? "Enviando..." : "Importar planilha"}
+          </Button>
         </div>
       </div>
 
