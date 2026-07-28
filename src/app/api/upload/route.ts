@@ -1,10 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
+import ExcelJS from "exceljs";
 import { prisma } from "@/lib/prisma";
 import { parseMartinsFile } from "@/lib/parseMartins";
 import { parseCompetitorFile } from "@/lib/parseCompetitor";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+async function extractPrintImage(buffer: Buffer): Promise<{ data: Buffer; mimeType: string } | null> {
+  try {
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer);
+    const media = workbook.model.media as Array<{ type: string; buffer: ArrayBuffer | Buffer; extension: string }>;
+    if (!media || media.length === 0) return null;
+
+    const img = media[0];
+    const ext = (img.extension || "png").toLowerCase();
+    const mimeType = ext === "jpg" || ext === "jpeg" ? "image/jpeg" : ext === "gif" ? "image/gif" : "image/png";
+    const data = Buffer.isBuffer(img.buffer) ? img.buffer : Buffer.from(img.buffer as ArrayBuffer);
+
+    return { data, mimeType };
+  } catch (err) {
+    console.error("Falha ao extrair print da planilha (ignorado):", err);
+    return null;
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,6 +56,7 @@ export async function POST(req: NextRequest) {
     let updated = 0;
     let skipped = 0;
     let processed = 0;
+    let printSaved = false;
 
     if (type === "MARTINS") {
       const parsedMartins = parseMartinsFile(buffer);
@@ -55,8 +76,6 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Substitui totalmente a base da Martins: produtos que nao estao mais nessa
-      // planilha sao removidos (junto com os precos de concorrente ligados a eles).
       const newEans = rows.map(function (r) { return r.ean; });
       await prisma.product.deleteMany({ where: { ean: { notIn: newEans } } });
 
@@ -100,9 +119,6 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Substitui so os itens dessa industria+concorrente especifica.
-      // Outros concorrentes ja importados (DPC, Emefarma, etc.) continuam intactos,
-      // permitindo analisar varios concorrentes ao mesmo tempo.
       const oldItems = await prisma.competitorCatalogItem.findMany({
         where: { fornecedor: fornecedorField!, competitorName: sourceName! },
         select: { ean: true }
@@ -145,6 +161,24 @@ export async function POST(req: NextRequest) {
           update: { price: row.price }
         });
       }
+
+      const printImage = await extractPrintImage(buffer);
+      if (printImage) {
+        await prisma.competitorPrint.upsert({
+          where: { fornecedor_competitorName: { fornecedor: fornecedorField!, competitorName: sourceName! } },
+          create: {
+            fornecedor: fornecedorField!,
+            competitorName: sourceName!,
+            imageData: printImage.data,
+            mimeType: printImage.mimeType
+          },
+          update: {
+            imageData: printImage.data,
+            mimeType: printImage.mimeType
+          }
+        });
+        printSaved = true;
+      }
     }
 
     await prisma.uploadLog.create({
@@ -165,7 +199,8 @@ export async function POST(req: NextRequest) {
       created: created,
       updated: updated,
       skipped: skipped,
-      fornecedor: fornecedorField
+      fornecedor: fornecedorField,
+      printSaved: printSaved
     });
   } catch (err) {
     console.error(err);

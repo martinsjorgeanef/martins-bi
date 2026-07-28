@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { IndustryRow, CategoryRow, ProductRow } from "./types";
 import { buildComprasActionRecommendations } from "./comprasEmailBuilder";
 import { STATUS_LABEL } from "./calculations";
@@ -23,12 +23,43 @@ async function fetchProductRows(): Promise<ProductRow[]> {
   return data.rows || [];
 }
 
-type SheetCell = string | number;
+interface PrintRow {
+  competitorName: string;
+  mimeType: string;
+  imageBase64: string;
+}
+
+async function fetchPrints(fornecedor: string): Promise<PrintRow[]> {
+  try {
+    const res = await fetch("/api/competitors/prints?fornecedor=" + encodeURIComponent(fornecedor));
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.prints || [];
+  } catch {
+    return [];
+  }
+}
+
+function downloadBuffer(buffer: ArrayBuffer, fileName: string) {
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
 export async function exportComprasExcel(industry: IndustryRow | undefined, categories: CategoryRow[]) {
-  var wb = XLSX.utils.book_new();
+  const workbook = new ExcelJS.Workbook();
 
-  var resumoRows: SheetCell[][] = [
+  const resumoSheet = workbook.addWorksheet("Resumo Industria");
+  resumoSheet.columns = [{ width: 28 }, { width: 30 }];
+  const resumoRows: Array<[string, string | number]> = [
     ["Fornecedor", industry ? industry.fornecedor : "-"],
     ["Itens Martins", industry ? industry.itensMartins : 0],
     ["Itens Concorrente Cadastrados", industry ? industry.itensConcorrenteCadastrados : 0],
@@ -37,21 +68,21 @@ export async function exportComprasExcel(industry: IndustryRow | undefined, cate
     ["Itens em Desvantagem", industry ? industry.disadvantage : 0],
     ["Prioridade", industry ? industry.priority : "-"]
   ];
-  var resumoSheet = XLSX.utils.aoa_to_sheet(resumoRows);
-  resumoSheet["!cols"] = [{ wch: 28 }, { wch: 30 }];
-  XLSX.utils.book_append_sheet(wb, resumoSheet, "Resumo Industria");
+  resumoRows.forEach(function (row) { resumoSheet.addRow(row); });
 
-  var catHeader: SheetCell[] = [
-    "Categoria",
-    "Monitorados",
-    "Competitivos",
-    "Em Desvantagem",
-    "Competitividade (%)",
-    "Gap Medio (%)",
-    "Prioridade"
+  const catSheet = workbook.addWorksheet("Categorias");
+  catSheet.columns = [
+    { header: "Categoria", width: 30 },
+    { header: "Monitorados", width: 14 },
+    { header: "Competitivos", width: 14 },
+    { header: "Em Desvantagem", width: 16 },
+    { header: "Competitividade (%)", width: 18 },
+    { header: "Gap Medio (%)", width: 14 },
+    { header: "Prioridade", width: 18 }
   ];
-  var catBodyRows: SheetCell[][] = categories.map(function (c) {
-    return [
+  catSheet.getRow(1).font = { bold: true };
+  categories.forEach(function (c) {
+    catSheet.addRow([
       c.category,
       c.monitored,
       c.competitive,
@@ -59,34 +90,31 @@ export async function exportComprasExcel(industry: IndustryRow | undefined, cate
       c.competitivePct,
       c.avgDisadvantagePct !== null ? c.avgDisadvantagePct : "-",
       c.priority
-    ];
+    ]);
   });
-  var catAllRows: SheetCell[][] = [catHeader];
-  catBodyRows.forEach(function (row) { catAllRows.push(row); });
-  var catSheet = XLSX.utils.aoa_to_sheet(catAllRows);
-  catSheet["!cols"] = [{ wch: 30 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 18 }, { wch: 14 }, { wch: 18 }];
-  XLSX.utils.book_append_sheet(wb, catSheet, "Categorias");
 
-  var acoes = buildComprasActionRecommendations(categories);
-  var acoesRows: SheetCell[][] = [["Acoes Recomendadas"]];
-  acoes.forEach(function (a) { acoesRows.push([a]); });
-  var acoesSheet = XLSX.utils.aoa_to_sheet(acoesRows);
-  acoesSheet["!cols"] = [{ wch: 80 }];
-  XLSX.utils.book_append_sheet(wb, acoesSheet, "Acoes Recomendadas");
+  const acoes = buildComprasActionRecommendations(categories);
+  const acoesSheet = workbook.addWorksheet("Acoes Recomendadas");
+  acoesSheet.getColumn(1).width = 80;
+  const acoesHeaderRow = acoesSheet.addRow(["Acoes Recomendadas"]);
+  acoesHeaderRow.font = { bold: true };
+  acoes.forEach(function (a) { acoesSheet.addRow([a]); });
 
-  var products = await fetchProductRows();
-  var prodHeader: SheetCell[] = [
-    "EAN",
-    "Descricao",
-    "Categoria",
-    "Preco Martins",
-    "Preco Concorrente",
-    "Distribuidor",
-    "Diferenca (%)",
-    "Status"
+  const products = await fetchProductRows();
+  const prodSheet = workbook.addWorksheet("Analise de Produtos");
+  prodSheet.columns = [
+    { header: "EAN", width: 16 },
+    { header: "Descricao", width: 45 },
+    { header: "Categoria", width: 22 },
+    { header: "Preco Martins", width: 14 },
+    { header: "Preco Concorrente", width: 16 },
+    { header: "Distribuidor", width: 18 },
+    { header: "Diferenca (%)", width: 14 },
+    { header: "Status", width: 18 }
   ];
-  var prodBodyRows: SheetCell[][] = products.map(function (p) {
-    return [
+  prodSheet.getRow(1).font = { bold: true };
+  products.forEach(function (p) {
+    prodSheet.addRow([
       p.ean,
       p.description,
       p.category ? p.category : "-",
@@ -95,23 +123,33 @@ export async function exportComprasExcel(industry: IndustryRow | undefined, cate
       p.bestCompetitor ? p.bestCompetitor : "-",
       p.diffPct !== null ? Math.round(p.diffPct * 1000) / 10 : "-",
       STATUS_LABEL[p.status]
-    ];
+    ]);
   });
-  var prodAllRows: SheetCell[][] = [prodHeader];
-  prodBodyRows.forEach(function (row) { prodAllRows.push(row); });
-  var prodSheet = XLSX.utils.aoa_to_sheet(prodAllRows);
-  prodSheet["!cols"] = [
-    { wch: 16 },
-    { wch: 45 },
-    { wch: 22 },
-    { wch: 14 },
-    { wch: 16 },
-    { wch: 18 },
-    { wch: 14 },
-    { wch: 18 }
-  ];
-  XLSX.utils.book_append_sheet(wb, prodSheet, "Analise de Produtos");
 
-  var fileName = "analise_compradores_" + (industry ? industry.fornecedor.replace(/\s+/g, "_") : "geral") + ".xlsx";
-  XLSX.writeFile(wb, fileName);
+  if (industry) {
+    const prints = await fetchPrints(industry.fornecedor);
+    if (prints.length > 0) {
+      const printSheet = workbook.addWorksheet("Print Concorrente");
+      printSheet.getColumn(1).width = 90;
+      let currentRow = 1;
+      for (const print of prints) {
+        printSheet.getCell("A" + currentRow).value = print.competitorName;
+        printSheet.getCell("A" + currentRow).font = { bold: true };
+        currentRow += 1;
+
+        const ext = print.mimeType === "image/jpeg" ? "jpeg" : print.mimeType === "image/gif" ? "gif" : "png";
+        const imageId = workbook.addImage({ base64: print.imageBase64, extension: ext });
+        printSheet.addImage(imageId, {
+          tl: { col: 0, row: currentRow },
+          ext: { width: 500, height: 350 }
+        });
+        currentRow += 20;
+      }
+    }
+  }
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const fileName =
+    "analise_compradores_" + (industry ? industry.fornecedor.replace(/\s+/g, "_") : "geral") + ".xlsx";
+  downloadBuffer(buffer as ArrayBuffer, fileName);
 }

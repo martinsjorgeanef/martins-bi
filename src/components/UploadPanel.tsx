@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
-import { X, UploadCloud, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { X, UploadCloud, CheckCircle2, AlertCircle, Loader2, Download } from "lucide-react";
 import { clsx } from "clsx";
 import { IndustryRow } from "@/lib/types";
 
@@ -100,6 +100,11 @@ export function UploadPanel({ open, onClose, onSuccess }: Props) {
 
   if (!open) return null;
 
+  function handleDownloadTemplate() {
+    const params = fornecedor.trim() ? "?fornecedor=" + encodeURIComponent(fornecedor.trim()) : "";
+    window.open("/api/competitors/template" + params, "_blank");
+  }
+
   async function handleSubmitCadger() {
     setProgress("Lendo a planilha...");
     const buffer = await file!.arrayBuffer();
@@ -148,6 +153,10 @@ export function UploadPanel({ open, onClose, onSuccess }: Props) {
 
     let message = `Processado: ${data.processed} linhas · ${data.created} novos · ${data.updated} atualizados · ${data.skipped} ignorados.`;
 
+    if (type === "COMPETITOR" && data.printSaved) {
+      message += " · Print do concorrente salvo.";
+    }
+
     if (type === "COMPETITOR" && data.fornecedor) {
       try {
         const industriesRes = await fetch("/api/industries");
@@ -157,6 +166,7 @@ export function UploadPanel({ open, onClose, onSuccess }: Props) {
         );
         if (match) {
           message = `${match.fornecedor}: Itens Martins ${match.itensMartins} · Concorrente cadastrado ${match.itensConcorrenteCadastrados} · Concorrente c/ preço ${match.itensConcorrenteComPreco}.`;
+          if (data.printSaved) message += " Print do concorrente salvo.";
         }
       } catch {
         // mantém a mensagem padrão se a busca falhar
@@ -269,6 +279,14 @@ export function UploadPanel({ open, onClose, onSuccess }: Props) {
                 Use o mesmo nome do fornecedor que aparece no CADGER, para o cruzamento funcionar certinho.
               </p>
             </div>
+            <button
+              onClick={handleDownloadTemplate}
+              type="button"
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-line py-2 text-xs font-medium text-ink-700 hover:bg-surface"
+            >
+              <Download size={14} />
+              Baixar modelo padrão {fornecedor.trim() ? "(" + fornecedor.trim() + ")" : ""}
+            </button>
           </div>
         )}
 
