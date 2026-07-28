@@ -23,8 +23,8 @@ export function SalesMessageModal({ open, onClose, competitiveItems, allItems, i
   const [mode, setMode] = useState<VendasMode>(initialMode || "resumida");
   const items = mode === "resumida" ? competitiveItems : allItems;
   const message = useMemo(function () {
-    return buildVendasMessage(items, industryName, mode, notaLabel, prazoLabel);
-  }, [items, industryName, mode, notaLabel, prazoLabel]);
+    return buildVendasMessage(items, industryName, mode);
+  }, [items, industryName, mode]);
 
   async function handleCopy() {
     await navigator.clipboard.writeText(message.body);

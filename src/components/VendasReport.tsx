@@ -81,8 +81,8 @@ export function VendasReport() {
   var items = mode === "resumida" ? competitiveItems : allItems;
 
   var message = useMemo(
-    function () { return buildVendasMessage(items, industryName, mode, notaLabel, prazoLabel); },
-    [items, industryName, mode, notaLabel, prazoLabel]
+    function () { return buildVendasMessage(items, industryName, mode); },
+    [items, industryName, mode]
   );
 
   if (loading) {
