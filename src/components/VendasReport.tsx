@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { MessageCircle } from "lucide-react";
 import { DisadvantageItem } from "./Charts";
 import { SalesMessageModal } from "./SalesMessageModal";
 import { buildVendasMessage } from "@/lib/vendasMessageBuilder";
 import { VendasMode } from "@/lib/vendasGrouping";
+import { ErrorState } from "./ui/ErrorState";
 
 function renderPreviewLine(line: string, idx: number) {
   var parts = line.split(/(\*[^*]+\*)/g);
@@ -26,32 +27,77 @@ function renderPreviewLine(line: string, idx: number) {
 }
 
 export function VendasReport() {
-  const [items, setItems] = useState<DisadvantageItem[]>([]);
+  const [allItems, setAllItems] = useState<DisadvantageItem[]>([]);
   const [industryName, setIndustryName] = useState<string | null>(null);
+  const [notaLabel, setNotaLabel] = useState("Nota RJ");
+  const [prazoLabel, setPrazoLabel] = useState("Prazo 45D");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [messageOpen, setMessageOpen] = useState(false);
   const [mode, setMode] = useState<VendasMode>("resumida");
 
-  useEffect(function () {
-    Promise.all([
-      fetch("/api/stats").then(function (r) { return r.json(); }),
-      fetch("/api/industries").then(function (r) { return r.json(); })
-    ]).then(function (results) {
-      var stats = results[0];
-      var ind = results[1];
-      setItems(stats.topAdvantage || []);
-      var industries = ind.industries || [];
-      setIndustryName(industries.length > 0 ? industries[0].fornecedor : null);
-      setLoading(false);
-    });
+  const loadAll = useCallback(function () {
+    setLoading(true);
+    setLoadError(false);
+    fetch("/api/settings")
+      .then(function (r) { return r.json(); })
+      .then(function (settingsData) {
+        var activeCompetitors = settingsData.activeCompetitors || "";
+        setNotaLabel(settingsData.notaLabel || "Nota RJ");
+        setPrazoLabel(settingsData.prazoLabel || "Prazo 45D");
+        var params = new URLSearchParams({ competitors: activeCompetitors });
+        return Promise.all([
+          fetch("/api/stats?" + params.toString()).then(function (r) {
+            if (!r.ok) throw new Error("Falha ao carregar estatisticas.");
+            return r.json();
+          }),
+          fetch("/api/industries").then(function (r) {
+            if (!r.ok) throw new Error("Falha ao carregar industrias.");
+            return r.json();
+          })
+        ]);
+      })
+      .then(function (results) {
+        var stats = results[0];
+        var ind = results[1];
+        setAllItems(stats.allItems || []);
+        var industries = ind.industries || [];
+        setIndustryName(industries.length > 0 ? industries[0].fornecedor : null);
+      })
+      .catch(function () {
+        setLoadError(true);
+      })
+      .finally(function () {
+        setLoading(false);
+      });
   }, []);
 
-  var message = useMemo(function () { return buildVendasMessage(items, industryName, mode); }, [items, industryName, mode]);
+  useEffect(function () { loadAll(); }, [loadAll]);
+
+  var competitiveItems = useMemo(
+    function () { return allItems.filter(function (i) { return i.status === "COMPETITIVO"; }); },
+    [allItems]
+  );
+
+  var items = mode === "resumida" ? competitiveItems : allItems;
+
+  var message = useMemo(
+    function () { return buildVendasMessage(items, industryName, mode, notaLabel, prazoLabel); },
+    [items, industryName, mode, notaLabel, prazoLabel]
+  );
 
   if (loading) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-8">
         <p className="text-[13px] text-ink-600">Carregando...</p>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-8">
+        <ErrorState message="Nao foi possivel carregar a Central de Comunicacao para Vendas." onRetry={loadAll} />
       </div>
     );
   }
@@ -62,7 +108,7 @@ export function VendasReport() {
     <div className="mx-auto flex max-w-[720px] w-[95%] flex-col gap-4 py-6">
       <div>
         <h1 className="text-[20px] font-bold text-[#1F2937]">Central de Comunicacao para Vendas</h1>
-        <p className="mt-0.5 text-[12px] text-[#6B7280]">
+        <p className="mt-0.5 text-[13px] text-[#6B7280]">
           Preview da mensagem que sera enviada ao time comercial
           {industryName ? " - Industria: " + industryName : ""}.
         </p>
@@ -112,9 +158,12 @@ export function VendasReport() {
       <SalesMessageModal
         open={messageOpen}
         onClose={function () { setMessageOpen(false); }}
-        items={items}
+        competitiveItems={competitiveItems}
+        allItems={allItems}
         industryName={industryName}
         initialMode={mode}
+        notaLabel={notaLabel}
+        prazoLabel={prazoLabel}
       />
     </div>
   );

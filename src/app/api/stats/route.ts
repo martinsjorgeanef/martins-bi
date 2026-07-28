@@ -6,6 +6,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
+  try {
   const { searchParams } = new URL(req.url);
   const competitorsParam = searchParams.get("competitors") || "";
   const selectedCompetitors = competitorsParam
@@ -37,6 +38,7 @@ export async function GET(req: Request) {
     diffPct: number;
     category: string | null;
     martinsPrice: number;
+    status: string;
   }[] = [];
 
   for (const p of products) {
@@ -88,7 +90,8 @@ export async function GET(req: Request) {
       description: p.description,
       diffPct: diffPct,
       category: p.category,
-      martinsPrice: p.martinsPrice
+      martinsPrice: p.martinsPrice,
+      status: status
     });
   }
 
@@ -101,15 +104,7 @@ export async function GET(req: Request) {
 
   const top20Worst = worstSorted.slice(0, 20);
 
-  const allEans = top20Worst
-    .map(function (w) {
-      return w.ean;
-    })
-    .concat(
-      bestSorted.slice(0, 100).map(function (w) {
-        return w.ean;
-      })
-    );
+  const allEans = Array.from(new Set(matchedItems.map(function (w) { return w.ean; })));
 
   const cadgerMatches = await prisma.cadgerItem.findMany({
     where: { ean: { in: allEans } },
@@ -164,6 +159,20 @@ export async function GET(req: Request) {
         diffPct: Math.round(w.diffPct * 1000) / 10,
         martinsPrice: w.martinsPrice
       };
+    }),
+    allItems: matchedItems.map(function (w) {
+      return {
+        ean: w.ean,
+        description: longDescByEan.get(w.ean) || w.description,
+        category: w.category,
+        diffPct: Math.round(w.diffPct * 1000) / 10,
+        martinsPrice: w.martinsPrice,
+        status: w.status
+      };
     })
   });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: "Erro ao carregar estatisticas." }, { status: 500 });
+  }
 }

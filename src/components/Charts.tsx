@@ -6,6 +6,7 @@ export interface DisadvantageItem {
   category: string | null;
   diffPct: number;
   martinsPrice?: number;
+  status?: string;
 }
 
 export function TopDisadvantageChart({ data }: { data: DisadvantageItem[] }) {
