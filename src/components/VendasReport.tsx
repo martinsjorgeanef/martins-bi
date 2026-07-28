@@ -6,7 +6,6 @@ import { DisadvantageItem } from "./Charts";
 import { SalesMessageModal } from "./SalesMessageModal";
 import { buildVendasMessage } from "@/lib/vendasMessageBuilder";
 import { VendasMode } from "@/lib/vendasGrouping";
-import { ErrorState } from "./ui/ErrorState";
 
 function renderPreviewLine(line: string, idx: number) {
   var parts = line.split(/(\*[^*]+\*)/g);
@@ -97,7 +96,7 @@ export function VendasReport() {
   if (loadError) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-8">
-        <ErrorState message="Nao foi possivel carregar a Central de Comunicacao para Vendas." onRetry={loadAll} />
+        <div><p className="text-[13px] text-bad">Nao foi possivel carregar a Central de Comunicacao para Vendas.</p><button onClick={loadAll} className="mt-2 rounded-lg border border-line px-3 py-1.5 text-[13px]">Tentar novamente</button></div>
       </div>
     );
   }
