@@ -76,3 +76,18 @@ model CompetitorCatalogItem {
   @@unique([ean, competitorName])
   @@index([fornecedor])
 }
+
+model SupplierHistory {
+  id                String   @id @default(cuid())
+  fornecedor        String
+  estado            String
+  mes               String
+  metaVenda         Float
+  venda             Float
+  clientesAtendidos Int
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([fornecedor, estado, mes])
+  @@index([fornecedor, estado])
+}

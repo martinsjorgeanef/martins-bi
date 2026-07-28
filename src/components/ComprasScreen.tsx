@@ -9,6 +9,7 @@ import { EmailComprasModal } from "./EmailComprasModal";
 import { IndustryRow, CategoryRow } from "@/lib/types";
 import { FileText, FileSpreadsheet, Mail } from "lucide-react";
 import { Button } from "./ui/Button";
+import { SupplierHistoryPanel } from "./SupplierHistoryPanel";
 import { exportComprasExcel } from "@/lib/comprasExcelExport";
 import { exportComprasPdf } from "@/lib/comprasPdfExport";
 
@@ -91,6 +92,8 @@ export function ComprasScreen() {
           <CategoryTable categories={categories} />
         </div>
       </div>
+
+      <SupplierHistoryPanel fornecedor={industriaAtiva ? industriaAtiva.fornecedor : ""} />
 
       <EmailComprasModal
         open={emailOpen}
