@@ -22,6 +22,15 @@ function formatMoneyBR(v: number): string {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+var MESES_NOMES_EMAIL = ["", "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+
+function formatMesEmail(mes: string): string {
+  var ano = mes.slice(0, 4);
+  var mesNum = mes.slice(4, 6);
+  var idx = parseInt(mesNum, 10);
+  return (MESES_NOMES_EMAIL[idx] || mesNum) + "/" + ano;
+}
+
 export function buildHistoryParagraph(rows: SupplierHistoryRowForEmail[], estadoLabel: string): string | null {
   if (rows.length === 0) return null;
 
@@ -29,40 +38,46 @@ export function buildHistoryParagraph(rows: SupplierHistoryRowForEmail[], estado
   var comMeta = sorted.filter(function (r) { return r.metaVenda > 0; });
   if (comMeta.length === 0) return null;
 
-  var somaPct = 0;
+  var ultimos6 = comMeta.slice(-6);
+  var n = ultimos6.length;
+
   var mesesAbaixo = 0;
-  var somaClientes = 0;
-  for (var i = 0; i < comMeta.length; i++) {
-    var pct = (comMeta[i].venda / comMeta[i].metaVenda) * 100;
-    somaPct += pct;
-    if (pct < 100) mesesAbaixo++;
-    somaClientes += comMeta[i].clientesAtendidos;
+  for (var i = 0; i < ultimos6.length; i++) {
+    var pctCheck = (ultimos6[i].venda / ultimos6[i].metaVenda) * 100;
+    if (pctCheck < 100) mesesAbaixo++;
   }
-  var avgPct = somaPct / comMeta.length;
-  var avgClientes = Math.round(somaClientes / comMeta.length);
-  var n = comMeta.length;
 
-  var somaMeta = comMeta.reduce(function (acc, r) { return acc + r.metaVenda; }, 0);
-  var somaVenda = comMeta.reduce(function (acc, r) { return acc + r.venda; }, 0);
+  var linhas: string[] = [];
+  linhas.push(
+    "Trazendo o histórico dos últimos " + n + " meses no estado do " + estadoLabel +
+      ", o desempenho da indústria mês a mês foi o seguinte:"
+  );
+  linhas.push("");
 
-  var frase: string;
-  if (avgPct >= 100) {
-    frase =
-      "Nos ultimos " + n + " meses no estado do " + estadoLabel + ", a industria atingiu em media " +
-      formatPct(avgPct) + " da meta (meta acumulada de " + formatMoneyBR(somaMeta) + " frente a " +
-      formatMoneyBR(somaVenda) + " realizados), atendendo em media " + avgClientes +
-      " clientes por mes. Ainda assim, em " + mesesAbaixo + " desses " + n +
-      " meses o resultado ficou abaixo da meta, o que sugere espaco para crescer ainda mais o potencial da industria na regiao.";
+  for (var j = 0; j < ultimos6.length; j++) {
+    var row = ultimos6[j];
+    var pct = (row.venda / row.metaVenda) * 100;
+    linhas.push(
+      "- " + formatMesEmail(row.mes) + ": " + formatPct(pct) + " da meta (" +
+        formatMoneyBR(row.venda) + " de " + formatMoneyBR(row.metaVenda) + "), " +
+        row.clientesAtendidos + " clientes atendidos."
+    );
+  }
+
+  linhas.push("");
+  if (mesesAbaixo > 0) {
+    linhas.push(
+      "Em " + mesesAbaixo + " desses " + n + " meses o resultado ficou abaixo da meta. Acreditamos que, com seu apoio na priorização das negociações, " +
+        "conseguimos destravar juntos o potencial de crescimento da indústria no estado do " + estadoLabel + " nos próximos meses."
+    );
   } else {
-    frase =
-      "Nos ultimos " + n + " meses no estado do " + estadoLabel + ", a industria atingiu em media apenas " +
-      formatPct(avgPct) + " da meta estabelecida (meta acumulada de " + formatMoneyBR(somaMeta) +
-      " frente a " + formatMoneyBR(somaVenda) + " realizados), atendendo em media " + avgClientes +
-      " clientes por mes. Em " + mesesAbaixo + " desses " + n +
-      " meses o resultado ficou abaixo da meta, reforcando a necessidade de acoes conjuntas para destravar o potencial da industria na regiao.";
+    linhas.push(
+      "A indústria vem entregando um bom resultado no período, e contar com seu apoio nas negociações pode ajudar a sustentar e ampliar ainda mais esse crescimento no estado do " +
+        estadoLabel + "."
+    );
   }
 
-  return frase;
+  return linhas.join("\n");
 }
 
 export function buildComprasEmail(
