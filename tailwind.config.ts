@@ -34,8 +34,8 @@ const config: Config = {
         line: "#E4E9F2"
       },
       fontFamily: {
-        display: ["var(--font-plex)", "sans-serif"],
-        body: ["var(--font-inter)", "sans-serif"],
+        display: ["Segoe UI", "sans-serif"],
+        body: ["Segoe UI", "sans-serif"],
         mono: ["var(--font-mono)", "monospace"]
       },
       boxShadow: {
