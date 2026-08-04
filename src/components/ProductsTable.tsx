@@ -53,11 +53,11 @@ function money(v: number) {
 }
 
 function DiffCell({ diffPct }: { diffPct: number | null }) {
-  if (diffPct === null) return <span className="text-[11px] text-ink-500">-</span>;
+  if (diffPct === null) return <span className="td-cell text-ink-500">-</span>;
   const pct = diffPct * 100;
   const positive = pct >= 0;
   return (
-    <span className={clsx("text-[11px] font-medium tabular-nums", positive ? "text-good" : "text-bad")}>
+    <span className={clsx("td-cell font-medium tabular-nums", positive ? "text-good" : "text-bad")}>
       {positive ? "+" : ""}
       {pct.toFixed(1)}%
     </span>
@@ -90,9 +90,9 @@ function SortHeader({
       )}
     >
       <span
-        style={{ color: HEADER_TEXT, fontSize: "11.5px", fontWeight: 600 }}
+        style={{ color: HEADER_TEXT, fontWeight: 600 }}
         className={clsx(
-          "inline-flex items-center gap-1 uppercase tracking-wide",
+          "th-label inline-flex items-center gap-1 uppercase tracking-wide",
           align === "right" && "flex-row-reverse",
           align === "center" && "justify-center"
         )}
@@ -151,18 +151,18 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
                 <SortHeader label="Descricao" field="description" sortBy={sortBy} sortDir={sortDir} onSort={onSort} />
               ) : null}
               {visibleColumns.categoria ? (
-                <th className="whitespace-nowrap px-2.5 py-1.5 text-left" style={{ color: HEADER_TEXT, fontSize: "11.5px", fontWeight: 600 }}>
-                  Categoria
+                <th className="whitespace-nowrap px-2.5 py-1.5 text-left" style={{ color: HEADER_TEXT, fontWeight: 600 }}>
+                  <span className="th-label">Categoria</span>
                 </th>
               ) : null}
               {visibleColumns.fornecedor ? (
-                <th className="whitespace-nowrap px-2.5 py-1.5 text-left" style={{ color: HEADER_TEXT, fontSize: "11.5px", fontWeight: 600 }}>
-                  Fornecedor
+                <th className="whitespace-nowrap px-2.5 py-1.5 text-left" style={{ color: HEADER_TEXT, fontWeight: 600 }}>
+                  <span className="th-label">Fornecedor</span>
                 </th>
               ) : null}
               {visibleColumns.distribuidor ? (
-                <th className="whitespace-nowrap px-2.5 py-1.5 text-left" style={{ color: HEADER_TEXT, fontSize: "11.5px", fontWeight: 600 }}>
-                  Distribuidor
+                <th className="whitespace-nowrap px-2.5 py-1.5 text-left" style={{ color: HEADER_TEXT, fontWeight: 600 }}>
+                  <span className="th-label">Distribuidor</span>
                 </th>
               ) : null}
               {visibleColumns.precoMartins ? (
@@ -175,17 +175,17 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
                 <SortHeader label="Diferenca" field="diffPct" sortBy={sortBy} sortDir={sortDir} onSort={onSort} align="right" />
               ) : null}
               {visibleColumns.status ? (
-                <th className="whitespace-nowrap px-2.5 py-1.5 text-center" style={{ color: HEADER_TEXT, fontSize: "11.5px", fontWeight: 600 }}>
-                  Status
+                <th className="whitespace-nowrap px-2.5 py-1.5 text-center" style={{ color: HEADER_TEXT, fontWeight: 600 }}>
+                  <span className="th-label">Status</span>
                 </th>
               ) : null}
               {visibleColumns.marca ? (
-                <th className="whitespace-nowrap px-2.5 py-1.5 text-left" style={{ color: HEADER_TEXT, fontSize: "11.5px", fontWeight: 600 }}>
-                  Marca
+                <th className="whitespace-nowrap px-2.5 py-1.5 text-left" style={{ color: HEADER_TEXT, fontWeight: 600 }}>
+                  <span className="th-label">Marca</span>
                 </th>
               ) : null}
-              <th className="whitespace-nowrap px-2.5 py-1.5 text-center" style={{ color: HEADER_TEXT, fontSize: "11.5px", fontWeight: 600 }}>
-                Simulacao
+              <th className="whitespace-nowrap px-2.5 py-1.5 text-center" style={{ color: HEADER_TEXT, fontWeight: 600 }}>
+                <span className="th-label">Simulacao</span>
               </th>
             </tr>
           </thead>
@@ -204,7 +204,7 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
 
             {!loading && rows.length === 0 ? (
               <tr>
-                <td colSpan={11} className="px-2.5 py-8 text-center text-[12px] text-ink-600">
+                <td colSpan={11} className="td-cell px-2.5 py-8 text-center text-ink-600">
                   Nenhum produto encontrado com esses filtros.
                 </td>
               </tr>
@@ -217,37 +217,37 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
                   return (
                     <tr key={r.id} className="border-b border-line/50 hover:bg-[#EEF4FF]" style={{ background: rowBg }}>
                       {visibleColumns.ean ? (
-                        <td className="whitespace-nowrap px-2.5 py-1.5 font-mono text-[11px] text-ink-700" title={r.ean}>
+                        <td className="td-cell whitespace-nowrap px-2.5 py-1.5 font-mono text-ink-700" title={r.ean}>
                           {r.ean}
                         </td>
                       ) : null}
                       {visibleColumns.descricao ? (
-                        <td className="whitespace-normal break-words px-2.5 py-1.5 text-[12px] font-medium text-ink-950" title={r.description}>
+                        <td className="td-cell whitespace-normal break-words px-2.5 py-1.5 font-medium text-ink-950" title={r.description}>
                           {r.description}
                         </td>
                       ) : null}
                       {visibleColumns.categoria ? (
-                        <td className="truncate px-2.5 py-1.5 text-[12px] text-ink-700" title={r.category || ""}>
+                        <td className="td-cell truncate px-2.5 py-1.5 text-ink-700" title={r.category || ""}>
                           {r.category ? r.category : "-"}
                         </td>
                       ) : null}
                       {visibleColumns.fornecedor ? (
-                        <td className="truncate px-2.5 py-1.5 text-[12px] text-ink-700" title={r.supplier || ""}>
+                        <td className="td-cell truncate px-2.5 py-1.5 text-ink-700" title={r.supplier || ""}>
                           {r.supplier ? r.supplier : "-"}
                         </td>
                       ) : null}
                       {visibleColumns.distribuidor ? (
-                        <td className="truncate px-2.5 py-1.5 text-[12px] font-medium text-ink-700" title={r.bestCompetitor || ""}>
+                        <td className="td-cell truncate px-2.5 py-1.5 font-medium text-ink-700" title={r.bestCompetitor || ""}>
                           {r.bestCompetitor ? r.bestCompetitor : "-"}
                         </td>
                       ) : null}
                       {visibleColumns.precoMartins ? (
-                        <td className="whitespace-nowrap px-2.5 py-1.5 text-right text-[13px] font-medium tabular-nums text-ink-950">
+                        <td className="td-cell whitespace-nowrap px-2.5 py-1.5 text-right font-medium tabular-nums text-ink-950">
                           {money(r.martinsPrice)}
                         </td>
                       ) : null}
                       {visibleColumns.precoConcorrente ? (
-                        <td className="whitespace-nowrap px-2.5 py-1.5 text-right text-[12px] font-medium tabular-nums text-ink-700">
+                        <td className="td-cell whitespace-nowrap px-2.5 py-1.5 text-right font-medium tabular-nums text-ink-700">
                           {r.marketPrice !== null ? money(r.marketPrice) : "-"}
                         </td>
                       ) : null}
@@ -262,7 +262,7 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
                         </td>
                       ) : null}
                       {visibleColumns.marca ? (
-                        <td className="truncate px-2.5 py-1.5 text-[12px] text-ink-700" title={marcaLabel}>
+                        <td className="td-cell truncate px-2.5 py-1.5 text-ink-700" title={marcaLabel}>
                           {marcaLabel}
                         </td>
                       ) : null}
@@ -270,13 +270,13 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
                         {r.requiredDiscountPct !== undefined ? (
                           <span
                             title={"Aplicando " + (r.requiredDiscountPct * 100).toFixed(1).replace(".", ",") + "% de desconto, este item torna-se competitivo."}
-                            className="inline-flex items-center gap-0.5 rounded-full bg-surface px-1.5 py-0.5 text-[10px] font-medium text-[#374151]"
+                            className="td-cell inline-flex items-center gap-0.5 rounded-full bg-surface px-1.5 py-0.5 font-medium text-[#374151]"
                           >
                             {r.requiredDiscountPct * 100 <= 2 ? "🟢" : r.requiredDiscountPct * 100 <= 5 ? "🟡" : "🔴"}
                             {(r.requiredDiscountPct * 100).toFixed(1).replace(".", ",") + "%"}
                           </span>
                         ) : (
-                          <span className="text-[10px] text-ink-500">-</span>
+                          <span className="td-cell text-ink-500">-</span>
                         )}
                       </td>
                     </tr>
