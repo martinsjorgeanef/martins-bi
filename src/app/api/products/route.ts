@@ -22,11 +22,57 @@ function buildRow(
     competitorPrices: { competitorName: string; price: number }[];
   },
   thresholdFraction: number,
-  selectedCompetitors: string[] | null
+  selectedCompetitors: string[] | null,
+  distributorFilter: string
 ): ProductRow {
   var allCompetitors = product.competitorPrices.map(function (c) {
     return { name: c.competitorName, price: c.price };
   });
+
+  if (distributorFilter) {
+    var exact = allCompetitors.find(function (c) { return c.name === distributorFilter; });
+
+    if (!exact) {
+      return {
+        id: product.id,
+        ean: product.ean,
+        description: product.description,
+        category: product.category,
+        supplier: product.supplier,
+        martinsPrice: product.martinsPrice,
+        marketPrice: null,
+        bestCompetitor: null,
+        diffPct: null,
+        status: "SEM_DADOS",
+        competitors: allCompetitors,
+        martinsUpdatedAt: product.martinsUpdatedAt.toISOString()
+      };
+    }
+
+    const diffPctExact = calcDiffPct(product.martinsPrice, exact.price);
+    const statusExact = calcStatus(diffPctExact, thresholdFraction);
+
+    const rowExact: ProductRow = {
+      id: product.id,
+      ean: product.ean,
+      description: product.description,
+      category: product.category,
+      supplier: product.supplier,
+      martinsPrice: product.martinsPrice,
+      marketPrice: exact.price,
+      bestCompetitor: exact.name,
+      diffPct: diffPctExact,
+      status: statusExact,
+      competitors: allCompetitors,
+      martinsUpdatedAt: product.martinsUpdatedAt.toISOString()
+    };
+
+    if (statusExact === "DESVANTAGEM") {
+      rowExact.requiredDiscountPct = calcRequiredDiscountPct(product.martinsPrice, exact.price, thresholdFraction);
+    }
+
+    return rowExact;
+  }
 
   var consideredCompetitors = selectedCompetitors
     ? allCompetitors.filter(function (c) { return selectedCompetitors.indexOf(c.name) !== -1; })
@@ -84,6 +130,7 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get("status") || "";
   const competitorsParam = searchParams.get("competitors") || "";
   const supplier = searchParams.get("supplier") || "";
+  const distributor = searchParams.get("distributor") || "";
   const sortBy = searchParams.get("sortBy") || "diffPct";
   const sortDir = searchParams.get("sortDir") === "asc" ? 1 : -1;
   const page = Math.max(1, Number(searchParams.get("page") || 1));
@@ -101,7 +148,7 @@ export async function GET(req: NextRequest) {
   });
 
   let rows = products.map(function (p) {
-    return buildRow(p, thresholdFraction, selectedCompetitors);
+    return buildRow(p, thresholdFraction, selectedCompetitors, distributor);
   });
 
   if (status !== "SEM_DADOS") {
