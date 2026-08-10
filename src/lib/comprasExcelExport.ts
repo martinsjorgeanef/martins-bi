@@ -40,6 +40,24 @@ async function fetchPrints(fornecedor: string): Promise<PrintRow[]> {
   }
 }
 
+interface MissingItemRow {
+  ean: string;
+  description: string;
+  price: number | null;
+  competitorName: string;
+}
+
+async function fetchMissingItems(fornecedor: string): Promise<MissingItemRow[]> {
+  try {
+    const res = await fetch("/api/competitors/missing-items?fornecedor=" + encodeURIComponent(fornecedor));
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.missing || [];
+  } catch {
+    return [];
+  }
+}
+
 function downloadBuffer(buffer: ArrayBuffer, fileName: string) {
   const blob = new Blob([buffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -127,6 +145,26 @@ export async function exportComprasExcel(industry: IndustryRow | undefined, cate
   });
 
   if (industry) {
+    const missingItems = await fetchMissingItems(industry.fornecedor);
+    if (missingItems.length > 0) {
+      const missingSheet = workbook.addWorksheet("Itens Sem Cadastro Martins");
+      missingSheet.columns = [
+        { header: "EAN", width: 16 },
+        { header: "Descricao", width: 50 },
+        { header: "Concorrente", width: 20 },
+        { header: "Preco Concorrente", width: 18 }
+      ];
+      missingSheet.getRow(1).font = { bold: true };
+      missingItems.forEach(function (item) {
+        missingSheet.addRow([
+          item.ean,
+          item.description,
+          item.competitorName,
+          item.price !== null ? money(item.price) : "-"
+        ]);
+      });
+    }
+
     const prints = await fetchPrints(industry.fornecedor);
     if (prints.length > 0) {
       const printSheet = workbook.addWorksheet("Print Concorrente");
