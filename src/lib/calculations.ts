@@ -34,9 +34,10 @@ export function discountTier(discountFraction: number): "green" | "yellow" | "re
   return "red";
 }
 
-export const STATUS_LABEL: Record<CompetitivenessStatus | "SEM_DADOS", string> = {
+export const STATUS_LABEL: Record<CompetitivenessStatus | "SEM_DADOS" | "NAO_CADASTRADO_MARTINS", string> = {
   COMPETITIVO: "Competitivo",
   ATENCAO: "Negociacao pontual",
   DESVANTAGEM: "Desvantagem",
-  SEM_DADOS: "Sem dados de mercado"
+  SEM_DADOS: "Sem dados de mercado",
+  NAO_CADASTRADO_MARTINS: "Nao Cadastrado Martins"
 };

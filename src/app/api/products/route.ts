@@ -123,6 +123,56 @@ function buildRow(
   return row;
 }
 
+function buildMissingRows(
+  catalogItems: { ean: string; fornecedor: string; competitorName: string; price: number | null; description: string | null; updatedAt: Date }[],
+  selectedCompetitors: string[] | null,
+  distributorFilter: string
+): ProductRow[] {
+  var filtered = selectedCompetitors
+    ? catalogItems.filter(function (c) { return selectedCompetitors.indexOf(c.competitorName) !== -1; })
+    : catalogItems;
+
+  if (distributorFilter) {
+    filtered = filtered.filter(function (c) { return c.competitorName === distributorFilter; });
+  }
+
+  var byEan = new Map<string, typeof filtered>();
+  filtered.forEach(function (item) {
+    var arr = byEan.get(item.ean) || [];
+    arr.push(item);
+    byEan.set(item.ean, arr);
+  });
+
+  var rows: ProductRow[] = [];
+  byEan.forEach(function (items, ean) {
+    var withPrice = items.filter(function (i) { return i.price !== null; });
+    var best = withPrice.length > 0
+      ? withPrice.reduce(function (min, c) { return c.price! < min.price! ? c : min; })
+      : items[0];
+
+    var competitors = withPrice.map(function (i) {
+      return { name: i.competitorName, price: i.price as number };
+    });
+
+    rows.push({
+      id: "missing-" + ean,
+      ean: ean,
+      description: best.description || "(descricao nao disponivel - reimporte a planilha do concorrente)",
+      category: null,
+      supplier: best.fornecedor,
+      martinsPrice: 0,
+      marketPrice: best.price,
+      bestCompetitor: best.competitorName,
+      diffPct: null,
+      status: "NAO_CADASTRADO_MARTINS",
+      competitors: competitors,
+      martinsUpdatedAt: best.updatedAt.toISOString()
+    });
+  });
+
+  return rows;
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const search = searchParams.get("search")?.trim().toLowerCase() || "";
@@ -151,8 +201,15 @@ export async function GET(req: NextRequest) {
     return buildRow(p, thresholdFraction, selectedCompetitors, distributor);
   });
 
-  if (status !== "SEM_DADOS") {
-    rows = rows.filter(function (r) { return r.status !== "SEM_DADOS"; });
+  const productEans = new Set(products.map(function (p) { return p.ean; }));
+  const catalogItems = await prisma.competitorCatalogItem.findMany({
+    where: { ean: { notIn: Array.from(productEans) } }
+  });
+  const missingRows = buildMissingRows(catalogItems, selectedCompetitors, distributor);
+  rows = rows.concat(missingRows);
+
+  if (status !== "SEM_DADOS" && status !== "NAO_CADASTRADO_MARTINS") {
+    rows = rows.filter(function (r) { return r.status !== "SEM_DADOS" && r.status !== "NAO_CADASTRADO_MARTINS"; });
   }
 
   if (search) {

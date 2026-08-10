@@ -243,7 +243,7 @@ export function ProductsTable({ rows, loading, page, totalPages, total, onPage, 
                       ) : null}
                       {visibleColumns.precoMartins ? (
                         <td className="td-cell whitespace-nowrap px-2.5 py-1.5 text-right font-medium tabular-nums text-ink-950">
-                          {money(r.martinsPrice)}
+                          {r.status === "NAO_CADASTRADO_MARTINS" ? "-" : money(r.martinsPrice)}
                         </td>
                       ) : null}
                       {visibleColumns.precoConcorrente ? (

@@ -10,7 +10,7 @@ export interface ProductRow {
   marketPrice: number | null;
   bestCompetitor: string | null;
   diffPct: number | null;
-  status: CompetitivenessStatus | "SEM_DADOS";
+  status: CompetitivenessStatus | "SEM_DADOS" | "NAO_CADASTRADO_MARTINS";
   competitors: { name: string; price: number }[];
   martinsUpdatedAt: string;
   requiredDiscountPct?: number;

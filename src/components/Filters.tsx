@@ -78,6 +78,7 @@ export function Filters(props: Props) {
         <option value="ATENCAO">Negociacao pontual</option>
         <option value="DESVANTAGEM">Desvantagem</option>
         <option value="SEM_DADOS">Sem dados</option>
+        <option value="NAO_CADASTRADO_MARTINS">Nao Cadastrado Martins</option>
       </Select>
 
       <div className="flex h-[38px] shrink-0 items-center gap-1.5 rounded-lg border border-line bg-surface px-3">
