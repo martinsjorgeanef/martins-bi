@@ -145,8 +145,8 @@ export async function POST(req: NextRequest) {
       for (const row of rows) {
         await prisma.competitorCatalogItem.upsert({
           where: { ean_competitorName: { ean: row.ean, competitorName: sourceName! } },
-          create: { ean: row.ean, fornecedor: fornecedorField!, competitorName: sourceName!, price: row.price },
-          update: { fornecedor: fornecedorField!, price: row.price }
+          create: { ean: row.ean, fornecedor: fornecedorField!, competitorName: sourceName!, price: row.price, description: row.description || null },
+          update: { fornecedor: fornecedorField!, price: row.price, description: row.description || null }
         });
         created++;
 
